@@ -1,13 +1,26 @@
-import { useState } from "react";
-import type { Helado } from "@inventario/domain";
+import { useMemo, useState } from "react";
+import {
+  Dinero,
+  ResumenFinanciero,
+  type Helado,
+} from "@inventario/domain";
 import { useInventario } from "./hooks/useInventario";
 import { ResumenStats } from "./components/ResumenStats";
 import { HeladoList } from "./components/HeladoList";
 import { HeladoForm } from "./components/HeladoForm";
 import { MovimientoList } from "./components/MovimientoList";
 import { MovimientoForm } from "./components/MovimientoForm";
+import { FiltroFechas, type RangoFechas } from "./components/FiltroFechas";
+import {
+  FiltroTipoMovimiento,
+  type FiltroTipo,
+  OPCIONES_TIPO,
+} from "./components/FiltroTipoMovimiento";
 import { Sheet } from "./components/Sheet";
+import { format } from "date-fns";
+import { es as esDateFns } from "date-fns/locale";
 import { formatearMoneda } from "./lib/inventario";
+import { estaEnRango, inicioDelDia, rangoMesActual } from "./lib/fechas";
 
 type Vista = "inventario" | "movimientos" | "resumen";
 type Modal =
@@ -20,11 +33,9 @@ export function App() {
   const {
     helados,
     movimientos,
-    resumen,
     loading,
     saving,
     error,
-    modoPersistencia,
     limpiarError,
     agregarHelado,
     editarHelado,
@@ -34,6 +45,44 @@ export function App() {
 
   const [vista, setVista] = useState<Vista>("inventario");
   const [modal, setModal] = useState<Modal>(null);
+  const [rango, setRango] = useState<RangoFechas>(() => rangoMesActual());
+  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>("TODOS");
+
+  const movimientosFiltrados = useMemo(
+    () =>
+      movimientos.filter((m) => {
+        const enFecha = estaEnRango(m.fecha, rango.desde, rango.hasta);
+        const enTipo = filtroTipo === "TODOS" || m.tipo === filtroTipo;
+        return enFecha && enTipo;
+      }),
+    [movimientos, rango, filtroTipo]
+  );
+
+  const resumenPeriodo = useMemo(() => {
+    let valorCosto = Dinero.cero();
+    let valorVenta = Dinero.cero();
+    for (const h of helados) {
+      valorCosto = valorCosto.sumar(h.valorInventarioCosto());
+      valorVenta = valorVenta.sumar(h.valorInventarioVenta());
+    }
+    return ResumenFinanciero.desdeMovimientos(
+      movimientosFiltrados,
+      valorCosto,
+      valorVenta
+    );
+  }, [helados, movimientosFiltrados]);
+
+  const etiquetaPeriodo = useMemo(() => {
+    const desde = inicioDelDia(rango.desde);
+    const hasta = inicioDelDia(rango.hasta);
+    const fechas =
+      rango.desde === rango.hasta
+        ? format(desde, "d MMM yyyy", { locale: esDateFns })
+        : `${format(desde, "d MMM", { locale: esDateFns })} → ${format(hasta, "d MMM yyyy", { locale: esDateFns })}`;
+    const tipoLabel =
+      OPCIONES_TIPO.find((o) => o.value === filtroTipo)?.label ?? "Todos";
+    return filtroTipo === "TODOS" ? fechas : `${fechas} · ${tipoLabel}`;
+  }, [rango, filtroTipo]);
 
   function cerrarModal() {
     setModal(null);
@@ -44,13 +93,17 @@ export function App() {
     <div className="app">
       <header className="brand-bar">
         <div className="brand">
-          <span className="brand__name">Heladería</span>
-          <span className="brand__tag">
-            Inventario · ganancia · diezmo
-            <span className="persist-badge">
-              {modoPersistencia === "supabase" ? "Supabase" : "Local"}
-            </span>
-          </span>
+          <img
+            className="brand__logo"
+            src="/logo.png"
+            alt="Helados"
+            width={64}
+            height={64}
+          />
+          <div className="brand__text">
+            <span className="brand__name">Helados</span>
+            <span className="brand__tag">Inventario · ganancia · diezmo</span>
+          </div>
         </div>
         {vista === "inventario" && (
           <button
@@ -74,7 +127,10 @@ export function App() {
         )}
       </header>
 
-      <ResumenStats resumen={resumen} />
+      <FiltroFechas rango={rango} onChange={setRango} />
+      <FiltroTipoMovimiento valor={filtroTipo} onChange={setFiltroTipo} />
+
+      <ResumenStats resumen={resumenPeriodo} periodo={etiquetaPeriodo} />
 
       <nav className="tabs" aria-label="Secciones">
         {(
@@ -125,45 +181,47 @@ export function App() {
             <section className="panel">
               <div className="panel__head">
                 <h2 className="panel__title">Movimientos</h2>
+                <span className="panel__meta">
+                  {movimientosFiltrados.length} en el periodo
+                </span>
               </div>
-              <MovimientoList movimientos={movimientos} />
+              <MovimientoList movimientos={movimientosFiltrados} />
             </section>
           )}
 
           {vista === "resumen" && (
             <section className="panel">
               <div className="panel__head">
-                <h2 className="panel__title">Resumen financiero</h2>
+                <h2 className="panel__title">Resumen del periodo</h2>
               </div>
               <p className="hint">
-                La inversión suma el costo de cada entrada (cantidad × precio de
-                costo). La ganancia y el diezmo (10%) solo en salidas por venta.
-                El consumo personal sale al costo y no genera ganancia ni
-                diezmo.
+                Inversión, ganancia y diezmo se calculan solo con los
+                movimientos del periodo seleccionado ({etiquetaPeriodo}). El
+                valor del inventario es el stock actual (no depende del filtro).
               </p>
               <div className="helado-item__meta" style={{ marginBottom: "1rem" }}>
                 <div className="meta-block meta-block--ganancia">
-                  <span>Inversión total (entradas)</span>
+                  <span>Inversión del periodo</span>
                   <strong>
-                    {formatearMoneda(resumen.totalInversion.pesos)}
+                    {formatearMoneda(resumenPeriodo.totalInversion.pesos)}
                   </strong>
                 </div>
                 <div className="meta-block">
                   <span>Valor inventario (costo)</span>
                   <strong>
-                    {formatearMoneda(resumen.valorInventarioCosto.pesos)}
+                    {formatearMoneda(resumenPeriodo.valorInventarioCosto.pesos)}
                   </strong>
                 </div>
                 <div className="meta-block">
                   <span>Valor inventario (venta)</span>
                   <strong>
-                    {formatearMoneda(resumen.valorInventarioVenta.pesos)}
+                    {formatearMoneda(resumenPeriodo.valorInventarioVenta.pesos)}
                   </strong>
                 </div>
                 <div className="meta-block">
                   <span>Entradas / Salidas</span>
                   <strong>
-                    {resumen.totalEntradas} / {resumen.totalSalidas}
+                    {resumenPeriodo.totalEntradas} / {resumenPeriodo.totalSalidas}
                   </strong>
                 </div>
               </div>
@@ -173,24 +231,24 @@ export function App() {
                     <div className="meta-block">
                       <span>Ganancia bruta</span>
                       <strong>
-                        {formatearMoneda(resumen.totalGanancia.pesos)}
+                        {formatearMoneda(resumenPeriodo.totalGanancia.pesos)}
                       </strong>
                     </div>
                     <div className="meta-block">
                       <span>Diezmo (solo ventas)</span>
                       <strong>
-                        {formatearMoneda(resumen.totalDiezmo.pesos)}
+                        {formatearMoneda(resumenPeriodo.totalDiezmo.pesos)}
                       </strong>
                     </div>
                     <div className="meta-block">
                       <span>Ganancia neta</span>
                       <strong>
-                        {formatearMoneda(resumen.gananciaNeta.pesos)}
+                        {formatearMoneda(resumenPeriodo.gananciaNeta.pesos)}
                       </strong>
                     </div>
                     <div className="meta-block">
                       <span>Unidades vendidas</span>
-                      <strong>{resumen.unidadesVendidas}</strong>
+                      <strong>{resumenPeriodo.unidadesVendidas}</strong>
                     </div>
                   </div>
                 </div>

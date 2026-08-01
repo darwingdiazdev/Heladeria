@@ -3,13 +3,17 @@ import { formatearMoneda } from "../lib/inventario";
 
 interface Props {
   resumen: ResumenFinanciero;
+  periodo?: string;
 }
 
-export function ResumenStats({ resumen }: Props) {
+export function ResumenStats({ resumen, periodo }: Props) {
   return (
-    <section className="stats" aria-label="Resumen financiero">
+    <section className="stats" aria-label="Resumen financiero del periodo">
+      {periodo && (
+        <p className="stats__periodo">Periodo: {periodo}</p>
+      )}
       <div className="stat">
-        <span className="stat__label">Inversión (entradas)</span>
+        <span className="stat__label">Inversión</span>
         <span className="stat__value">
           {formatearMoneda(resumen.totalInversion.pesos)}
         </span>
@@ -21,7 +25,7 @@ export function ResumenStats({ resumen }: Props) {
         </span>
       </div>
       <div className="stat stat--coral">
-        <span className="stat__label">Diezmo (solo ventas)</span>
+        <span className="stat__label">Diezmo</span>
         <span className="stat__value">
           {formatearMoneda(resumen.totalDiezmo.pesos)}
         </span>

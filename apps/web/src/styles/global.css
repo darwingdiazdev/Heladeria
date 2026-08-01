@@ -33,6 +33,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
 }
 
 body {
@@ -96,13 +97,32 @@ button {
 
 .brand {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.brand__logo {
+  width: clamp(3rem, 12vw, 4rem);
+  height: clamp(3rem, 12vw, 4rem);
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.brand__text {
+  display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .brand__name {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 6vw, 2.4rem);
+  font-size: clamp(1.45rem, 5vw, 2.1rem);
   line-height: 1.05;
   background: linear-gradient(120deg, #fff 20%, var(--accent) 80%);
   -webkit-background-clip: text;
@@ -140,9 +160,20 @@ button {
   margin-bottom: 1.25rem;
 }
 
+.stats__periodo {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 @media (min-width: 640px) {
   .stats {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stats__periodo {
+    grid-column: 1 / -1;
   }
 }
 
@@ -178,6 +209,198 @@ button {
 .stat--accent .stat__value { color: var(--accent); }
 .stat--coral .stat__value { color: var(--coral); }
 .stat--gold .stat__value { color: var(--gold); }
+
+/* Filtro de fechas */
+.filtro-fechas {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.filtro-tipo {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.filtro-tipo__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.filtro-tipo__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filtro-fechas__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filtro-fechas__rango {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: 0.45rem;
+}
+
+.filtro-fechas__flecha {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-weight: 700;
+  padding-top: 0.9rem;
+}
+
+.filtro-fechas__fecha {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filtro-fechas__fecha:hover,
+.filtro-fechas__fecha:focus-visible,
+.filtro-fechas__fecha--activa {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+.filtro-fechas__fecha strong {
+  font-weight: 600;
+  text-transform: capitalize;
+  font-size: 0.92rem;
+}
+
+.filtro-fechas__resumen-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.filtro-fechas__hint {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.filtro-fechas__calendario {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: rgba(26, 16, 40, 0.92);
+  border: 1px solid rgba(196, 161, 255, 0.28);
+  box-shadow: var(--shadow);
+}
+
+.filtro-fechas__cal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+/* Calendario react-day-picker — tema heladería */
+.calendario-app.rdp-root {
+  --rdp-accent-color: #c4a1ff;
+  --rdp-accent-background-color: rgba(196, 161, 255, 0.22);
+  --rdp-today-color: #c4a1ff;
+  --rdp-range_start-date-background-color: #a78bfa;
+  --rdp-range_end-date-background-color: #a78bfa;
+  --rdp-range_start-color: #1a1028;
+  --rdp-range_end-color: #1a1028;
+  --rdp-range_middle-background-color: rgba(196, 161, 255, 0.2);
+  --rdp-range_middle-color: #f7f2ff;
+  --rdp-day-height: 2.4rem;
+  --rdp-day-width: 2.4rem;
+  --rdp-day_button-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
+  --rdp-nav_button-height: 2rem;
+  --rdp-nav_button-width: 2rem;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.calendario-app .rdp-month_caption {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text);
+}
+
+.calendario-app .rdp-weekday {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.calendario-app .rdp-button_previous,
+.calendario-app .rdp-button_next {
+  color: var(--accent);
+  border-radius: 999px;
+}
+
+.calendario-app .rdp-button_previous:hover,
+.calendario-app .rdp-button_next:hover {
+  background: var(--accent-soft);
+}
+
+.calendario-app .rdp-day_button {
+  color: var(--text);
+  border-radius: 999px;
+}
+
+.calendario-app .rdp-day_button:hover {
+  background: var(--accent-soft);
+}
+
+.calendario-app .rdp-outside .rdp-day_button {
+  color: var(--text-muted);
+  opacity: 0.45;
+}
+
+.calendario-app .rdp-disabled .rdp-day_button {
+  opacity: 0.3;
+}
+
+.calendario-app .rdp-selected .rdp-day_button {
+  font-weight: 700;
+}
+
+.calendario-app .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border: 1px solid rgba(196, 161, 255, 0.55);
+}
+
+.calendario-app .calendario-app__en-rango:not(.rdp-selected) .rdp-day_button {
+  background: rgba(196, 161, 255, 0.18);
+  color: var(--text);
+}
 
 /* Tabs / nav */
 .tabs {
@@ -231,7 +454,7 @@ button {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.25rem;
   padding: 0.5rem 0.75rem calc(0.5rem + var(--safe-bottom));
-  background: rgba(6, 42, 51, 0.92);
+  background: rgba(26, 16, 40, 0.96);
   border-top: 1px solid var(--border);
   backdrop-filter: blur(16px);
 }
@@ -303,6 +526,12 @@ button {
 
 .panel__title {
   font-size: 1.25rem;
+}
+
+.panel__meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* Buttons */
@@ -388,14 +617,39 @@ button {
 .field select,
 .field textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid var(--border);
+  background: #2a1548;
+  border: 1px solid rgba(196, 161, 255, 0.28);
   border-radius: var(--radius-sm);
   color: var(--text);
   padding: 0.75rem 0.85rem;
   min-height: 44px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  color-scheme: dark;
+}
+
+.field select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%),
+    linear-gradient(to right, #2a1548, #2a1548);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px),
+    0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%;
+  background-repeat: no-repeat;
+  padding-right: 2.25rem;
+}
+
+.field select option,
+.field select optgroup {
+  background-color: #2a1548;
+  color: #f7f2ff;
 }
 
 .field input:focus,
@@ -403,6 +657,23 @@ button {
 .field textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+  background-color: #352055;
+}
+
+.field select:focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%),
+    linear-gradient(to right, #352055, #352055);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px),
+    0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%;
+  background-repeat: no-repeat;
 }
 
 .field textarea {
