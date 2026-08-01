@@ -10,12 +10,13 @@ import { HeladoList } from "./components/HeladoList";
 import { HeladoForm } from "./components/HeladoForm";
 import { MovimientoList } from "./components/MovimientoList";
 import { MovimientoForm } from "./components/MovimientoForm";
-import { FiltroFechas, type RangoFechas } from "./components/FiltroFechas";
+import { FiltrosMovimientos } from "./components/FiltrosMovimientos";
+import { type RangoFechas } from "./components/FiltroFechas";
 import {
-  FiltroTipoMovimiento,
   type FiltroTipo,
   OPCIONES_TIPO,
 } from "./components/FiltroTipoMovimiento";
+import { Paginacion, usePaginacion } from "./components/Paginacion";
 import { Sheet } from "./components/Sheet";
 import { format } from "date-fns";
 import { es as esDateFns } from "date-fns/locale";
@@ -48,14 +49,20 @@ export function App() {
   const [rango, setRango] = useState<RangoFechas>(() => rangoMesActual());
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>("TODOS");
 
+  const movimientosPorFecha = useMemo(
+    () =>
+      movimientos.filter((m) =>
+        estaEnRango(m.fecha, rango.desde, rango.hasta)
+      ),
+    [movimientos, rango]
+  );
+
   const movimientosFiltrados = useMemo(
     () =>
-      movimientos.filter((m) => {
-        const enFecha = estaEnRango(m.fecha, rango.desde, rango.hasta);
-        const enTipo = filtroTipo === "TODOS" || m.tipo === filtroTipo;
-        return enFecha && enTipo;
-      }),
-    [movimientos, rango, filtroTipo]
+      movimientosPorFecha.filter(
+        (m) => filtroTipo === "TODOS" || m.tipo === filtroTipo
+      ),
+    [movimientosPorFecha, filtroTipo]
   );
 
   const resumenPeriodo = useMemo(() => {
@@ -66,23 +73,34 @@ export function App() {
       valorVenta = valorVenta.sumar(h.valorInventarioVenta());
     }
     return ResumenFinanciero.desdeMovimientos(
-      movimientosFiltrados,
+      movimientosPorFecha,
       valorCosto,
       valorVenta
     );
-  }, [helados, movimientosFiltrados]);
+  }, [helados, movimientosPorFecha]);
 
-  const etiquetaPeriodo = useMemo(() => {
+  const etiquetaFechas = useMemo(() => {
     const desde = inicioDelDia(rango.desde);
     const hasta = inicioDelDia(rango.hasta);
-    const fechas =
-      rango.desde === rango.hasta
-        ? format(desde, "d MMM yyyy", { locale: esDateFns })
-        : `${format(desde, "d MMM", { locale: esDateFns })} → ${format(hasta, "d MMM yyyy", { locale: esDateFns })}`;
+    if (rango.desde === rango.hasta) {
+      return format(desde, "d MMM yyyy", { locale: esDateFns });
+    }
+    return `${format(desde, "d MMM", { locale: esDateFns })} → ${format(hasta, "d MMM yyyy", { locale: esDateFns })}`;
+  }, [rango]);
+
+  const etiquetaPeriodo = useMemo(() => {
     const tipoLabel =
       OPCIONES_TIPO.find((o) => o.value === filtroTipo)?.label ?? "Todos";
-    return filtroTipo === "TODOS" ? fechas : `${fechas} · ${tipoLabel}`;
-  }, [rango, filtroTipo]);
+    return filtroTipo === "TODOS"
+      ? etiquetaFechas
+      : `${etiquetaFechas} · ${tipoLabel}`;
+  }, [etiquetaFechas, filtroTipo]);
+
+  const resetHelados = String(helados.length);
+  const resetMovs = `${rango.desde}|${rango.hasta}|${filtroTipo}|${movimientosFiltrados.length}`;
+
+  const pagHelados = usePaginacion(helados, resetHelados);
+  const pagMovs = usePaginacion(movimientosFiltrados, resetMovs);
 
   function cerrarModal() {
     setModal(null);
@@ -102,7 +120,6 @@ export function App() {
           />
           <div className="brand__text">
             <span className="brand__name">Helados</span>
-            <span className="brand__tag">Inventario · ganancia · diezmo</span>
           </div>
         </div>
         {vista === "inventario" && (
@@ -126,11 +143,6 @@ export function App() {
           </button>
         )}
       </header>
-
-      <FiltroFechas rango={rango} onChange={setRango} />
-      <FiltroTipoMovimiento valor={filtroTipo} onChange={setFiltroTipo} />
-
-      <ResumenStats resumen={resumenPeriodo} periodo={etiquetaPeriodo} />
 
       <nav className="tabs" aria-label="Secciones">
         {(
@@ -165,14 +177,23 @@ export function App() {
             <section className="panel">
               <div className="panel__head">
                 <h2 className="panel__title">Helados</h2>
+                <span className="panel__meta">{helados.length} total</span>
               </div>
               <HeladoList
-                helados={helados}
+                helados={pagHelados.items}
                 onEditar={(h) => setModal({ tipo: "editar", helado: h })}
                 onMovimiento={(h) => setModal({ tipo: "movimiento", helado: h })}
                 onEliminar={(h) => {
                   void eliminarHelado(h.id);
                 }}
+              />
+              <Paginacion
+                pagina={pagHelados.pagina}
+                totalPaginas={pagHelados.totalPaginas}
+                total={pagHelados.total}
+                porPagina={pagHelados.porPagina}
+                onAnterior={() => pagHelados.setPagina((p) => p - 1)}
+                onSiguiente={() => pagHelados.setPagina((p) => p + 1)}
               />
             </section>
           )}
@@ -182,10 +203,27 @@ export function App() {
               <div className="panel__head">
                 <h2 className="panel__title">Movimientos</h2>
                 <span className="panel__meta">
-                  {movimientosFiltrados.length} en el periodo
+                  {movimientosFiltrados.length} filtrados
                 </span>
               </div>
-              <MovimientoList movimientos={movimientosFiltrados} />
+
+              <FiltrosMovimientos
+                rango={rango}
+                onRangoChange={setRango}
+                filtroTipo={filtroTipo}
+                onTipoChange={setFiltroTipo}
+                resumenEtiqueta={etiquetaPeriodo}
+              />
+
+              <MovimientoList movimientos={pagMovs.items} />
+              <Paginacion
+                pagina={pagMovs.pagina}
+                totalPaginas={pagMovs.totalPaginas}
+                total={pagMovs.total}
+                porPagina={pagMovs.porPagina}
+                onAnterior={() => pagMovs.setPagina((p) => p - 1)}
+                onSiguiente={() => pagMovs.setPagina((p) => p + 1)}
+              />
             </section>
           )}
 
@@ -194,12 +232,20 @@ export function App() {
               <div className="panel__head">
                 <h2 className="panel__title">Resumen del periodo</h2>
               </div>
+
+              <FiltrosMovimientos
+                rango={rango}
+                onRangoChange={setRango}
+                resumenEtiqueta={etiquetaFechas}
+                mostrarTipo={false}
+              />
+
               <p className="hint">
-                Inversión, ganancia y diezmo se calculan solo con los
-                movimientos del periodo seleccionado ({etiquetaPeriodo}). El
-                valor del inventario es el stock actual (no depende del filtro).
+                Inversión, ganancia y diezmo según el rango de fechas
+                seleccionado. El valor del inventario es el stock actual.
               </p>
-              <div className="helado-item__meta" style={{ marginBottom: "1rem" }}>
+              <ResumenStats resumen={resumenPeriodo} periodo={etiquetaFechas} />
+              <div className="resumen-grid" style={{ marginBottom: "1rem" }}>
                 <div className="meta-block meta-block--ganancia">
                   <span>Inversión del periodo</span>
                   <strong>
@@ -227,7 +273,7 @@ export function App() {
               </div>
               <div className="list">
                 <div className="helado-item">
-                  <div className="helado-item__meta">
+                  <div className="resumen-grid">
                     <div className="meta-block">
                       <span>Ganancia bruta</span>
                       <strong>
