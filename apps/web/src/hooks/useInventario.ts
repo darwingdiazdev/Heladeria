@@ -1,0 +1,96 @@
+import { useCallback, useEffect, useState } from "react";
+import type {
+  ActualizarHeladoDTO,
+  CrearHeladoDTO,
+  Helado,
+  MovimientoInventario,
+  RegistrarMovimientoDTO,
+  ResumenFinanciero,
+} from "@inventario/domain";
+import {
+  inventarioService,
+  modoPersistencia,
+  resumenVacio,
+} from "../lib/inventario";
+
+export function useInventario() {
+  const [helados, setHelados] = useState<Helado[]>([]);
+  const [movimientos, setMovimientos] = useState<MovimientoInventario[]>([]);
+  const [resumen, setResumen] = useState<ResumenFinanciero>(resumenVacio);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setErr] = useState<string | null>(null);
+
+  const refrescar = useCallback(async () => {
+    const [listaHelados, listaMovimientos, resumenActual] = await Promise.all([
+      inventarioService.listarHelados(true),
+      inventarioService.listarMovimientos(),
+      inventarioService.obtenerResumen(),
+    ]);
+    setHelados(listaHelados);
+    setMovimientos(listaMovimientos);
+    setResumen(resumenActual);
+  }, []);
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        setLoading(true);
+        await refrescar();
+        if (vivo) setErr(null);
+      } catch (e) {
+        if (vivo) {
+          setErr(e instanceof Error ? e.message : "Error al cargar datos");
+        }
+      } finally {
+        if (vivo) setLoading(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [refrescar]);
+
+  const run = useCallback(
+    async <T,>(fn: () => Promise<T>): Promise<T | null> => {
+      try {
+        setSaving(true);
+        const result = await fn();
+        await refrescar();
+        setErr(null);
+        return result;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Error inesperado";
+        setErr(msg);
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refrescar]
+  );
+
+  const limpiarError = useCallback(() => setErr(null), []);
+
+  return {
+    helados,
+    movimientos,
+    resumen,
+    loading,
+    saving,
+    error,
+    modoPersistencia,
+    limpiarError,
+    agregarHelado: (dto: CrearHeladoDTO) =>
+      run(() => inventarioService.agregarHelado(dto)),
+    editarHelado: (id: string, dto: ActualizarHeladoDTO) =>
+      run(() => inventarioService.editarHelado(id, dto)),
+    eliminarHelado: (id: string) =>
+      run(async () => {
+        await inventarioService.eliminarHelado(id);
+      }),
+    registrarMovimiento: (dto: RegistrarMovimientoDTO) =>
+      run(() => inventarioService.registrarMovimiento(dto)),
+  };
+}
