@@ -45,9 +45,9 @@ export function MovimientoForm({
     <form className="form" onSubmit={handleSubmit}>
       <p className="hint">
         En <strong>entrada</strong> se registra la inversión (cantidad × costo).
-        Solo en <strong>salida/venta</strong> se calcula ganancia y diezmo
-        (10%). El <strong>consumo personal</strong> sale al precio de costo, sin
-        ganancia ni diezmo.
+        En <strong>salida/venta</strong> el ingreso es a precio de venta (con
+        ganancia y diezmo). En <strong>consumo personal</strong> el ingreso es
+        a precio de costo (sin ganancia ni diezmo).
       </p>
 
       <div className="field">

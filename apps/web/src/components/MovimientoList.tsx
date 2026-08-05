@@ -39,6 +39,9 @@ export function MovimientoList({ movimientos }: Props) {
           )}
           {m.esVenta && (
             <div className="mov-item__money">
+              <span className="pill pill--inversion">
+                Ingreso {formatearMoneda(m.ingreso.pesos)}
+              </span>
               <span className="pill">
                 Ganancia {formatearMoneda(m.gananciaTotal.pesos)}
               </span>
@@ -50,7 +53,7 @@ export function MovimientoList({ movimientos }: Props) {
           {m.esConsumoPersonal && (
             <div className="mov-item__money">
               <span className="pill pill--consumo">
-                A costo {formatearMoneda(m.precioCostoUnitario.pesos)} / u · sin
+                Ingreso a costo {formatearMoneda(m.ingreso.pesos)} · sin
                 ganancia
               </span>
             </div>

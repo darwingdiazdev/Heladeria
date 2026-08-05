@@ -19,6 +19,12 @@ export function ResumenStats({ resumen, periodo }: Props) {
         </span>
       </div>
       <div className="stat stat--accent">
+        <span className="stat__label">Ingresos</span>
+        <span className="stat__value">
+          {formatearMoneda(resumen.totalIngresos.pesos)}
+        </span>
+      </div>
+      <div className="stat stat--gold">
         <span className="stat__label">Ganancia</span>
         <span className="stat__value">
           {formatearMoneda(resumen.totalGanancia.pesos)}
@@ -28,12 +34,6 @@ export function ResumenStats({ resumen, periodo }: Props) {
         <span className="stat__label">Diezmo</span>
         <span className="stat__value">
           {formatearMoneda(resumen.totalDiezmo.pesos)}
-        </span>
-      </div>
-      <div className="stat stat--gold">
-        <span className="stat__label">Ganancia neta</span>
-        <span className="stat__value">
-          {formatearMoneda(resumen.gananciaNeta.pesos)}
         </span>
       </div>
     </section>

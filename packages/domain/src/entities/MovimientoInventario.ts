@@ -79,6 +79,21 @@ export class MovimientoInventario {
     return this.precioCostoUnitario.multiplicar(this.cantidad);
   }
 
+  /**
+   * Dinero cobrado:
+   * - Venta → precio de venta × cantidad
+   * - Consumo personal → precio de costo × cantidad (se paga al costo, sin ganancia)
+   */
+  get ingreso(): Dinero {
+    if (this.esVenta) {
+      return this.precioVentaUnitario.multiplicar(this.cantidad);
+    }
+    if (this.esConsumoPersonal) {
+      return this.precioCostoUnitario.multiplicar(this.cantidad);
+    }
+    return Dinero.cero();
+  }
+
   get etiquetaTipo(): string {
     switch (this.tipo) {
       case TipoMovimiento.ENTRADA:

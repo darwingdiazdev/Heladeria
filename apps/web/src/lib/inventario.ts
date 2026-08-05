@@ -39,6 +39,7 @@ export const inventarioService = service;
 export const modoPersistencia = modo;
 
 export const resumenVacio = new ResumenFinanciero({
+  totalIngresos: 0,
   totalGanancia: 0,
   totalDiezmo: 0,
   gananciaNeta: 0,

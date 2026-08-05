@@ -241,27 +241,28 @@ export function App() {
               />
 
               <p className="hint">
-                Inversión, ganancia y diezmo según el rango de fechas
-                seleccionado. El valor del inventario es el stock actual.
+                Ingresos = ventas (precio de venta) + consumo personal (precio
+                de costo). La ganancia y el diezmo solo salen de las ventas. El
+                valor del inventario es el stock actual.
               </p>
               <ResumenStats resumen={resumenPeriodo} periodo={etiquetaFechas} />
               <div className="resumen-grid" style={{ marginBottom: "1rem" }}>
-                <div className="meta-block meta-block--ganancia">
+                <div className="meta-block">
                   <span>Inversión del periodo</span>
                   <strong>
                     {formatearMoneda(resumenPeriodo.totalInversion.pesos)}
+                  </strong>
+                </div>
+                <div className="meta-block meta-block--ganancia">
+                  <span>Ingresos del periodo</span>
+                  <strong>
+                    {formatearMoneda(resumenPeriodo.totalIngresos.pesos)}
                   </strong>
                 </div>
                 <div className="meta-block">
                   <span>Valor inventario (costo)</span>
                   <strong>
                     {formatearMoneda(resumenPeriodo.valorInventarioCosto.pesos)}
-                  </strong>
-                </div>
-                <div className="meta-block">
-                  <span>Valor inventario (venta)</span>
-                  <strong>
-                    {formatearMoneda(resumenPeriodo.valorInventarioVenta.pesos)}
                   </strong>
                 </div>
                 <div className="meta-block">

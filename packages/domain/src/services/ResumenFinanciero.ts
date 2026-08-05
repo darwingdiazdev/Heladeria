@@ -3,6 +3,7 @@ import type { MovimientoInventario } from "../entities/MovimientoInventario.js";
 import { TipoMovimiento } from "../entities/MovimientoInventario.js";
 
 export interface ResumenFinancieroProps {
+  totalIngresos: number;
   totalGanancia: number;
   totalDiezmo: number;
   gananciaNeta: number;
@@ -18,6 +19,7 @@ export interface ResumenFinancieroProps {
  * Objeto de valor / DTO de resumen financiero del inventario.
  */
 export class ResumenFinanciero {
+  readonly totalIngresos: Dinero;
   readonly totalGanancia: Dinero;
   readonly totalDiezmo: Dinero;
   readonly gananciaNeta: Dinero;
@@ -29,6 +31,7 @@ export class ResumenFinanciero {
   readonly valorInventarioVenta: Dinero;
 
   constructor(props: ResumenFinancieroProps) {
+    this.totalIngresos = Dinero.dePesos(props.totalIngresos);
     this.totalGanancia = Dinero.dePesos(props.totalGanancia);
     this.totalDiezmo = Dinero.dePesos(props.totalDiezmo);
     this.gananciaNeta = Dinero.dePesos(props.gananciaNeta);
@@ -45,6 +48,7 @@ export class ResumenFinanciero {
     valorCosto: Dinero,
     valorVenta: Dinero
   ): ResumenFinanciero {
+    let totalIngresos = Dinero.cero();
     let totalGanancia = Dinero.cero();
     let totalDiezmo = Dinero.cero();
     let totalInversion = Dinero.cero();
@@ -53,13 +57,16 @@ export class ResumenFinanciero {
     let totalSalidas = 0;
 
     for (const m of movimientos) {
-      // Diezmo y ganancia solo de salidas por venta (no consumo personal ni ajustes).
       if (m.tipo === TipoMovimiento.SALIDA) {
+        // Venta: ingreso a precio de venta + ganancia/diezmo.
+        totalIngresos = totalIngresos.sumar(m.ingreso);
         totalGanancia = totalGanancia.sumar(m.gananciaTotal);
         totalDiezmo = totalDiezmo.sumar(m.diezmo);
         unidadesVendidas += m.cantidad;
         totalSalidas += m.cantidad;
       } else if (m.tipo === TipoMovimiento.CONSUMO_PERSONAL) {
+        // Consumo personal: se paga al costo (ingreso = costo), sin ganancia ni diezmo.
+        totalIngresos = totalIngresos.sumar(m.ingreso);
         totalSalidas += m.cantidad;
       } else if (m.tipo === TipoMovimiento.ENTRADA) {
         totalEntradas += m.cantidad;
@@ -68,6 +75,7 @@ export class ResumenFinanciero {
     }
 
     return new ResumenFinanciero({
+      totalIngresos: totalIngresos.pesos,
       totalGanancia: totalGanancia.pesos,
       totalDiezmo: totalDiezmo.pesos,
       gananciaNeta: totalGanancia.restar(totalDiezmo).pesos,
@@ -82,6 +90,7 @@ export class ResumenFinanciero {
 
   toJSON(): ResumenFinancieroProps {
     return {
+      totalIngresos: this.totalIngresos.pesos,
       totalGanancia: this.totalGanancia.pesos,
       totalDiezmo: this.totalDiezmo.pesos,
       gananciaNeta: this.gananciaNeta.pesos,
