@@ -6,12 +6,22 @@ export {
   type MovimientoProps,
 } from "./entities/MovimientoInventario.js";
 export { CalculadoraDiezmo } from "./services/CalculadoraDiezmo.js";
-export { ResumenFinanciero, type ResumenFinancieroProps } from "./services/ResumenFinanciero.js";
+export {
+  ResumenFinanciero,
+  ResumenCompra,
+  type ResumenFinancieroProps,
+  type ResumenCompraProps,
+  type ResumenLineaCompraProps,
+  type ResumenExtraCompraProps,
+} from "./services/ResumenFinanciero.js";
 export {
   InventarioService,
   type CrearHeladoDTO,
   type ActualizarHeladoDTO,
   type RegistrarMovimientoDTO,
+  type RegistrarCompraDTO,
+  type LineaCompraDTO,
+  type ExtraCompraDTO,
   type EditarMovimientoDTO,
 } from "./services/InventarioService.js";
 export type { IInventarioRepository } from "./repositories/IInventarioRepository.js";

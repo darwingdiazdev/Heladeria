@@ -32,6 +32,7 @@ interface MovimientoRow {
   diezmo: number | string;
   nota: string;
   fecha: string;
+  compra_id?: string | null;
 }
 
 function num(v: number | string): number {
@@ -67,6 +68,7 @@ function mapMovimiento(row: MovimientoRow): MovimientoInventario {
     diezmo: num(row.diezmo),
     nota: row.nota,
     fecha: row.fecha,
+    compraId: row.compra_id ?? undefined,
   });
 }
 
@@ -145,6 +147,7 @@ export class SupabaseInventarioRepository implements IInventarioRepository {
       diezmo: json.diezmo,
       nota: json.nota ?? "",
       fecha: json.fecha,
+      compra_id: json.compraId ?? null,
     });
 
     if (error) throw new Error(`Error al guardar movimiento: ${error.message}`);
@@ -167,6 +170,7 @@ export class SupabaseInventarioRepository implements IInventarioRepository {
         diezmo: json.diezmo,
         nota: json.nota ?? "",
         fecha: json.fecha,
+        compra_id: json.compraId ?? null,
       })
       .eq("id", json.id);
 
@@ -175,7 +179,50 @@ export class SupabaseInventarioRepository implements IInventarioRepository {
     }
   }
 
+  async listarDiezmosEntregados(): Promise<string[]> {
+    const { data, error } = await this.client
+      .from("diezmos_compra")
+      .select("compra_id")
+      .eq("entregado", true);
+
+    if (error) {
+      throw new Error(`Error al listar diezmos: ${error.message}`);
+    }
+    return (data ?? []).map((row: { compra_id: string }) => row.compra_id);
+  }
+
+  async guardarDiezmoEntregado(
+    compraId: string,
+    entregado: boolean
+  ): Promise<void> {
+    if (!entregado) {
+      const { error } = await this.client
+        .from("diezmos_compra")
+        .delete()
+        .eq("compra_id", compraId);
+      if (error) {
+        throw new Error(`Error al quitar diezmo: ${error.message}`);
+      }
+      return;
+    }
+
+    const { error } = await this.client.from("diezmos_compra").upsert({
+      compra_id: compraId,
+      entregado: true,
+      actualizado_en: new Date().toISOString(),
+    });
+    if (error) {
+      throw new Error(`Error al marcar diezmo: ${error.message}`);
+    }
+  }
+
   async limpiarTodo(): Promise<void> {
+    const { error: e0 } = await this.client
+      .from("diezmos_compra")
+      .delete()
+      .neq("compra_id", "00000000-0000-0000-0000-000000000000");
+    if (e0) throw new Error(`Error al limpiar diezmos: ${e0.message}`);
+
     const { error: e1 } = await this.client
       .from("movimientos")
       .delete()

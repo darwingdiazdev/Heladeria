@@ -23,11 +23,18 @@ export interface MovimientoProps {
   diezmo: number;
   nota?: string;
   fecha?: string;
+  /**
+   * Id de factura/compra. Varias ENTRADAs con el mismo compraId
+   * forman una sola compra (varios helados).
+   * Si falta (datos viejos), se usa el id del movimiento.
+   */
+  compraId?: string;
 }
 
 /**
  * Entidad: Movimiento de inventario.
- * En salidas calcula ganancia y diezmo (10%).
+ * En salidas calcula el margen (venta − costo) como referencia.
+ * El diezmo se calcula en el resumen: 10% de (ingresos − inversión).
  */
 export class MovimientoInventario {
   readonly id: string;
@@ -43,6 +50,7 @@ export class MovimientoInventario {
   readonly diezmo: Dinero;
   readonly nota: string;
   readonly fecha: Date;
+  readonly compraId: string | undefined;
 
   constructor(props: MovimientoProps) {
     if (props.cantidad < 0) {
@@ -62,6 +70,12 @@ export class MovimientoInventario {
     this.diezmo = Dinero.dePesos(props.diezmo);
     this.nota = props.nota?.trim() ?? "";
     this.fecha = props.fecha ? new Date(props.fecha) : new Date();
+    this.compraId = props.compraId?.trim() || undefined;
+  }
+
+  /** Id de factura efectivo (compraId o el propio id en datos legacy). */
+  get facturaId(): string {
+    return this.compraId ?? this.id;
   }
 
   get esVenta(): boolean {
@@ -132,6 +146,7 @@ export class MovimientoInventario {
       diezmo: this.diezmo.pesos,
       nota: this.nota,
       fecha: this.fecha.toISOString(),
+      compraId: this.compraId,
     };
   }
 

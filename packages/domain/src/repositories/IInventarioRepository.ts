@@ -13,5 +13,8 @@ export interface IInventarioRepository {
   listarMovimientos(): Promise<MovimientoInventario[]>;
   guardarMovimiento(movimiento: MovimientoInventario): Promise<void>;
   actualizarMovimiento(movimiento: MovimientoInventario): Promise<void>;
+  /** Ids de facturas cuyo diezmo ya fue entregado. */
+  listarDiezmosEntregados(): Promise<string[]>;
+  guardarDiezmoEntregado(compraId: string, entregado: boolean): Promise<void>;
   limpiarTodo(): Promise<void>;
 }

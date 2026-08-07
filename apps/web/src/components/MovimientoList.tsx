@@ -4,6 +4,7 @@ import { formatearFecha, formatearMoneda } from "../lib/inventario";
 interface Props {
   movimientos: MovimientoInventario[];
   onEditar?: (movimiento: MovimientoInventario) => void;
+  vacioMensaje?: string;
 }
 
 function sePuedeEditar(m: MovimientoInventario): boolean {
@@ -12,11 +13,15 @@ function sePuedeEditar(m: MovimientoInventario): boolean {
   );
 }
 
-export function MovimientoList({ movimientos, onEditar }: Props) {
+export function MovimientoList({
+  movimientos,
+  onEditar,
+  vacioMensaje = "Sin registros en este periodo.",
+}: Props) {
   if (movimientos.length === 0) {
     return (
       <div className="empty">
-        <p>Sin movimientos todavía. Registra una entrada o una venta.</p>
+        <p>{vacioMensaje}</p>
       </div>
     );
   }
@@ -61,12 +66,6 @@ export function MovimientoList({ movimientos, onEditar }: Props) {
               </span>
               <span className="pill pill--consumo">
                 {formatearMoneda(m.precioVentaUnitario.pesos)} / u × {m.cantidad}
-              </span>
-              <span className="pill">
-                Ganancia {formatearMoneda(m.gananciaTotal.pesos)}
-              </span>
-              <span className="pill pill--diezmo">
-                Diezmo {formatearMoneda(m.diezmo.pesos)}
               </span>
             </div>
           )}

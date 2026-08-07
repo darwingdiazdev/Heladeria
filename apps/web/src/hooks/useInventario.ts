@@ -5,6 +5,7 @@ import type {
   EditarMovimientoDTO,
   Helado,
   MovimientoInventario,
+  RegistrarCompraDTO,
   RegistrarMovimientoDTO,
   ResumenFinanciero,
 } from "@inventario/domain";
@@ -18,19 +19,25 @@ export function useInventario() {
   const [helados, setHelados] = useState<Helado[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>([]);
   const [resumen, setResumen] = useState<ResumenFinanciero>(resumenVacio);
+  const [diezmosEntregados, setDiezmosEntregados] = useState<Set<string>>(
+    () => new Set()
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setErr] = useState<string | null>(null);
 
   const refrescar = useCallback(async () => {
-    const [listaHelados, listaMovimientos, resumenActual] = await Promise.all([
-      inventarioService.listarHelados(true),
-      inventarioService.listarMovimientos(),
-      inventarioService.obtenerResumen(),
-    ]);
+    const [listaHelados, listaMovimientos, resumenActual, diezmos] =
+      await Promise.all([
+        inventarioService.listarHelados(true),
+        inventarioService.listarMovimientos(),
+        inventarioService.obtenerResumen(),
+        inventarioService.listarDiezmosEntregados(),
+      ]);
     setHelados(listaHelados);
     setMovimientos(listaMovimientos);
     setResumen(resumenActual);
+    setDiezmosEntregados(new Set(diezmos));
   }, []);
 
   useEffect(() => {
@@ -78,6 +85,7 @@ export function useInventario() {
     helados,
     movimientos,
     resumen,
+    diezmosEntregados,
     loading,
     saving,
     error,
@@ -91,9 +99,15 @@ export function useInventario() {
       run(async () => {
         await inventarioService.eliminarHelado(id);
       }),
+    registrarCompra: (dto: RegistrarCompraDTO) =>
+      run(() => inventarioService.registrarCompra(dto)),
     registrarMovimiento: (dto: RegistrarMovimientoDTO) =>
       run(() => inventarioService.registrarMovimiento(dto)),
     editarMovimiento: (id: string, dto: EditarMovimientoDTO) =>
       run(() => inventarioService.editarMovimiento(id, dto)),
+    marcarDiezmoEntregado: (compraId: string, entregado: boolean) =>
+      run(async () => {
+        await inventarioService.marcarDiezmoEntregado(compraId, entregado);
+      }),
   };
 }

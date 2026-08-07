@@ -758,6 +758,168 @@ button {
   }
 }
 
+.caja-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.caja-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  margin: 0.25rem 0 0.5rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.18),
+    rgba(196, 161, 255, 0.12)
+  );
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.caja-total__label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.caja-total__value {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+}
+
+.factura-lineas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.factura-linea {
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.factura-linea-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.7fr) auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.factura-linea-row__quitar {
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+.factura-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.factura-extras__label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.factura-extras__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+@media (max-width: 520px) {
+  .factura-linea-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .factura-linea-row__quitar {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+.factura-linea__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 0.45rem;
+}
+
+.factura-detalle {
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.factura-detalle li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.factura-detalle li strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.diezmo-check {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.diezmo-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--gold);
+  flex-shrink: 0;
+}
+
+.mov-item--diezmo-ok {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: linear-gradient(
+    145deg,
+    rgba(251, 191, 36, 0.14),
+    rgba(0, 0, 0, 0.22)
+  );
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.2);
+}
+
+.mov-item--diezmo-ok .diezmo-check {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--gold);
+  font-weight: 600;
+}
+
 /* List */
 .list {
   display: flex;

@@ -4,7 +4,6 @@ import {
   TipoMovimiento,
 } from "../entities/MovimientoInventario.js";
 import type { IInventarioRepository } from "../repositories/IInventarioRepository.js";
-import { CalculadoraDiezmo } from "./CalculadoraDiezmo.js";
 import { ResumenFinanciero } from "./ResumenFinanciero.js";
 import { Dinero } from "../value-objects/Dinero.js";
 
@@ -40,6 +39,26 @@ export interface RegistrarMovimientoDTO {
   concepto?: string;
   /** Monto total del gasto (solo GASTO) */
   monto?: number;
+  /** Id de factura (solo ENTRADA); si no se envía se genera uno. */
+  compraId?: string;
+}
+
+export interface LineaCompraDTO {
+  heladoId: string;
+  cantidad: number;
+}
+
+/** Extra de la misma factura (afiche, cucharas, etc.). */
+export interface ExtraCompraDTO {
+  concepto: string;
+  monto: number;
+}
+
+/** Una factura de compra con uno o varios helados (+ extras opcionales). */
+export interface RegistrarCompraDTO {
+  lineas: LineaCompraDTO[];
+  extras?: ExtraCompraDTO[];
+  nota?: string;
 }
 
 export interface EditarMovimientoDTO {
@@ -57,8 +76,6 @@ export interface EditarMovimientoDTO {
  * Único punto de entrada para la UI.
  */
 export class InventarioService {
-  private readonly diezmo = new CalculadoraDiezmo();
-
   constructor(private readonly repo: IInventarioRepository) {}
 
   async listarHelados(soloActivos = true): Promise<Helado[]> {
@@ -88,6 +105,7 @@ export class InventarioService {
     await this.repo.guardarHelado(helado);
 
     if (stock > 0) {
+      const compraId = crypto.randomUUID();
       const movimiento = new MovimientoInventario({
         id: crypto.randomUUID(),
         heladoId: helado.id,
@@ -101,6 +119,7 @@ export class InventarioService {
         gananciaTotal: 0,
         diezmo: 0,
         nota: "Stock inicial",
+        compraId,
       });
       await this.repo.guardarMovimiento(movimiento);
     }
@@ -121,6 +140,100 @@ export class InventarioService {
     await this.repo.guardarHelado(helado);
   }
 
+  /**
+   * Registra una factura de compra con varias líneas (helados)
+   * y extras opcionales (afiche, cucharas…) bajo el mismo compraId.
+   */
+  async registrarCompra(
+    dto: RegistrarCompraDTO
+  ): Promise<MovimientoInventario[]> {
+    if (!dto.lineas.length) {
+      throw new Error("La compra debe tener al menos un helado");
+    }
+
+    const vistos = new Set<string>();
+    for (const linea of dto.lineas) {
+      if (!linea.heladoId) {
+        throw new Error("Cada línea necesita un helado");
+      }
+      if (!Number.isFinite(linea.cantidad) || linea.cantidad < 1) {
+        throw new Error("La cantidad de cada línea debe ser al menos 1");
+      }
+      if (vistos.has(linea.heladoId)) {
+        throw new Error(
+          "No repitas el mismo helado en la factura; suma la cantidad en una sola línea"
+        );
+      }
+      vistos.add(linea.heladoId);
+    }
+
+    const extras = dto.extras ?? [];
+    for (const extra of extras) {
+      const concepto = extra.concepto.trim();
+      if (!concepto) {
+        throw new Error("Cada extra necesita un concepto (ej. Afiche)");
+      }
+      if (!Number.isFinite(extra.monto) || extra.monto < 0) {
+        throw new Error(`El monto de "${concepto}" no es válido`);
+      }
+    }
+
+    const compraId = crypto.randomUUID();
+    const fecha = new Date().toISOString();
+    const creados: MovimientoInventario[] = [];
+
+    for (const linea of dto.lineas) {
+      const helado = await this.obtenerHelado(linea.heladoId);
+      const stockAnterior = helado.stock;
+      helado.aumentarStock(linea.cantidad);
+      await this.repo.guardarHelado(helado);
+
+      const movimiento = new MovimientoInventario({
+        id: crypto.randomUUID(),
+        heladoId: helado.id,
+        heladoNombre: helado.nombre,
+        tipo: TipoMovimiento.ENTRADA,
+        cantidad: linea.cantidad,
+        stockAnterior,
+        stockNuevo: helado.stock,
+        precioCostoUnitario: helado.precioCosto.pesos,
+        precioVentaUnitario: helado.precioVenta.pesos,
+        gananciaTotal: 0,
+        diezmo: 0,
+        nota: dto.nota,
+        fecha,
+        compraId,
+      });
+      await this.repo.guardarMovimiento(movimiento);
+      creados.push(movimiento);
+    }
+
+    for (const extra of extras) {
+      const concepto = extra.concepto.trim();
+      if (extra.monto === 0) continue;
+      const movimiento = new MovimientoInventario({
+        id: crypto.randomUUID(),
+        heladoId: "",
+        heladoNombre: concepto,
+        tipo: TipoMovimiento.GASTO,
+        cantidad: 1,
+        stockAnterior: 0,
+        stockNuevo: 0,
+        precioCostoUnitario: extra.monto,
+        precioVentaUnitario: 0,
+        gananciaTotal: 0,
+        diezmo: 0,
+        nota: dto.nota,
+        fecha,
+        compraId,
+      });
+      await this.repo.guardarMovimiento(movimiento);
+      creados.push(movimiento);
+    }
+
+    return creados;
+  }
+
   async registrarMovimiento(
     dto: RegistrarMovimientoDTO
   ): Promise<MovimientoInventario> {
@@ -139,11 +252,15 @@ export class InventarioService {
     let gananciaTotal = Dinero.cero();
     let diezmo = Dinero.cero();
     let precioVentaUnitario = helado.precioVenta.pesos;
+    let compraId: string | undefined = dto.compraId;
 
     switch (dto.tipo) {
       case TipoMovimiento.ENTRADA: {
         helado.aumentarStock(dto.cantidad);
         stockNuevo = helado.stock;
+        if (!compraId) {
+          compraId = crypto.randomUUID();
+        }
         break;
       }
       case TipoMovimiento.SALIDA: {
@@ -155,6 +272,8 @@ export class InventarioService {
           }
           precioVentaUnitario = dto.precioVentaUnitario;
         }
+        // Margen unitario solo informativo; el diezmo se calcula en el resumen
+        // como 10% de (ingresos − inversión).
         const gananciaUnitariaPesos = Math.max(
           0,
           precioVentaUnitario - helado.precioCosto.pesos
@@ -162,7 +281,7 @@ export class InventarioService {
         gananciaTotal = Dinero.dePesos(gananciaUnitariaPesos).multiplicar(
           dto.cantidad
         );
-        diezmo = this.diezmo.calcular(gananciaTotal);
+        diezmo = Dinero.cero();
         break;
       }
       case TipoMovimiento.CONSUMO_PERSONAL: {
@@ -201,6 +320,7 @@ export class InventarioService {
       gananciaTotal: gananciaTotal.pesos,
       diezmo: diezmo.pesos,
       nota: dto.nota,
+      compraId,
     });
 
     await this.repo.guardarMovimiento(movimiento);
@@ -278,14 +398,13 @@ export class InventarioService {
     const gananciaTotal = Dinero.dePesos(gananciaUnitariaPesos).multiplicar(
       actual.cantidad
     );
-    const diezmo = this.diezmo.calcular(gananciaTotal);
     const json = actual.toJSON();
 
     const actualizado = new MovimientoInventario({
       ...json,
       precioVentaUnitario: precioVenta,
       gananciaTotal: gananciaTotal.pesos,
-      diezmo: diezmo.pesos,
+      diezmo: 0,
       nota: dto.nota !== undefined ? dto.nota : json.nota,
       fecha: json.fecha,
     });
@@ -328,6 +447,20 @@ export class InventarioService {
   async listarMovimientos(): Promise<MovimientoInventario[]> {
     const movimientos = await this.repo.listarMovimientos();
     return movimientos.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+  }
+
+  async listarDiezmosEntregados(): Promise<string[]> {
+    return this.repo.listarDiezmosEntregados();
+  }
+
+  async marcarDiezmoEntregado(
+    compraId: string,
+    entregado: boolean
+  ): Promise<void> {
+    if (!compraId.trim()) {
+      throw new Error("La compra no es válida");
+    }
+    await this.repo.guardarDiezmoEntregado(compraId, entregado);
   }
 
   async obtenerResumen(): Promise<ResumenFinanciero> {

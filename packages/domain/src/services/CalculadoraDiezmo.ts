@@ -1,21 +1,22 @@
 import { Dinero } from "../value-objects/Dinero.js";
 
 /**
- * Servicio de dominio: calcula el diezmo (10% de la ganancia).
- * Solo aplica a salidas por venta; consumo personal y otros tipos no lo usan.
+ * Servicio de dominio: calcula el diezmo (10% de la utilidad).
+ * Utilidad = ingresos por ventas − inversión.
+ * Solo aplica cuando la utilidad es positiva.
  */
 export class CalculadoraDiezmo {
   static readonly PORCENTAJE = 10;
 
-  /** Diezmo sobre la ganancia de una venta. Si la ganancia no es positiva, retorna 0. */
-  calcular(ganancia: Dinero): Dinero {
-    if (ganancia.pesos <= 0) {
+  /** Diezmo sobre la utilidad. Si no es positiva, retorna 0. */
+  calcular(utilidad: Dinero): Dinero {
+    if (utilidad.pesos <= 0) {
       return Dinero.cero();
     }
-    return ganancia.porcentaje(CalculadoraDiezmo.PORCENTAJE);
+    return utilidad.porcentaje(CalculadoraDiezmo.PORCENTAJE);
   }
 
-  gananciaNetaTrasDiezmo(ganancia: Dinero): Dinero {
-    return ganancia.restar(this.calcular(ganancia));
+  utilidadNetaTrasDiezmo(utilidad: Dinero): Dinero {
+    return utilidad.restar(this.calcular(utilidad));
   }
 }

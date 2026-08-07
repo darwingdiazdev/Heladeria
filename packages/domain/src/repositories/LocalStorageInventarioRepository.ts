@@ -8,6 +8,8 @@ import type { IInventarioRepository } from "./IInventarioRepository.js";
 interface Persistencia {
   helados: HeladoProps[];
   movimientos: MovimientoProps[];
+  /** compraIds con diezmo ya entregado */
+  diezmosEntregados?: string[];
 }
 
 /**
@@ -71,8 +73,27 @@ export class LocalStorageInventarioRepository implements IInventarioRepository {
     this.guardar(data);
   }
 
+  async listarDiezmosEntregados(): Promise<string[]> {
+    return [...(this.cargar().diezmosEntregados ?? [])];
+  }
+
+  async guardarDiezmoEntregado(
+    compraId: string,
+    entregado: boolean
+  ): Promise<void> {
+    const data = this.cargar();
+    const set = new Set(data.diezmosEntregados ?? []);
+    if (entregado) {
+      set.add(compraId);
+    } else {
+      set.delete(compraId);
+    }
+    data.diezmosEntregados = [...set];
+    this.guardar(data);
+  }
+
   async limpiarTodo(): Promise<void> {
-    this.cache = { helados: [], movimientos: [] };
+    this.cache = { helados: [], movimientos: [], diezmosEntregados: [] };
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem(this.clave);
     }
@@ -98,6 +119,7 @@ export class LocalStorageInventarioRepository implements IInventarioRepository {
       this.cache = {
         helados: parsed.helados ?? [],
         movimientos: parsed.movimientos ?? [],
+        diezmosEntregados: parsed.diezmosEntregados ?? [],
       };
       return this.cache;
     } catch {

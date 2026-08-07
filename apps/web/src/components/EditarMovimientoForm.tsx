@@ -47,7 +47,7 @@ export function EditarMovimientoForm({
     <form className="form" onSubmit={handleSubmit}>
       <p className="hint">
         {esVenta
-          ? `Corrige el precio cobrado. Cantidad: ${movimiento.cantidad}. El stock no cambia; se recalculan ingreso, ganancia y diezmo.`
+          ? `Corrige el precio cobrado. Cantidad: ${movimiento.cantidad}. El stock no cambia; el ingreso se actualiza. El diezmo se recalcula en el resumen.`
           : "Corrige el concepto o el monto del gasto. Suma a la inversión del periodo."}
       </p>
 

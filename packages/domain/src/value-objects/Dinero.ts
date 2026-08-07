@@ -10,8 +10,8 @@ export class Dinero {
   }
 
   static dePesos(pesos: number): Dinero {
-    if (!Number.isFinite(pesos) || pesos < 0) {
-      throw new Error("El monto debe ser un número finito mayor o igual a 0");
+    if (!Number.isFinite(pesos)) {
+      throw new Error("El monto debe ser un número finito");
     }
     return new Dinero(pesos * 100);
   }

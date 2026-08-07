@@ -2,36 +2,42 @@ import { useMemo, useState } from "react";
 import {
   Dinero,
   ResumenFinanciero,
+  TipoMovimiento,
   type Helado,
   type MovimientoInventario,
 } from "@inventario/domain";
 import { useInventario } from "./hooks/useInventario";
-import { ResumenStats } from "./components/ResumenStats";
+import { ResumenComprasList } from "./components/ResumenComprasList";
 import { HeladoList } from "./components/HeladoList";
 import { HeladoForm } from "./components/HeladoForm";
 import { MovimientoList } from "./components/MovimientoList";
-import { MovimientoForm } from "./components/MovimientoForm";
+import { CompraForm } from "./components/CompraForm";
+import { CompraList } from "./components/CompraList";
+import { VentaForm } from "./components/VentaForm";
 import { EditarMovimientoForm } from "./components/EditarMovimientoForm";
 import { FiltrosMovimientos } from "./components/FiltrosMovimientos";
 import { type RangoFechas } from "./components/FiltroFechas";
-import {
-  type FiltroTipo,
-  OPCIONES_TIPO,
-} from "./components/FiltroTipoMovimiento";
 import { Paginacion, usePaginacion } from "./components/Paginacion";
 import { Sheet } from "./components/Sheet";
 import { format } from "date-fns";
 import { es as esDateFns } from "date-fns/locale";
-import { formatearMoneda } from "./lib/inventario";
 import { estaEnRango, inicioDelDia, rangoMesActual } from "./lib/fechas";
 
-type Vista = "inventario" | "movimientos" | "resumen";
+type Vista = "inventario" | "compras" | "ventas" | "resumen";
 type Modal =
   | { tipo: "crear" }
   | { tipo: "editar"; helado: Helado }
-  | { tipo: "movimiento"; helado?: Helado }
+  | { tipo: "compra"; helado?: Helado }
+  | { tipo: "venta"; helado?: Helado }
   | { tipo: "editar-movimiento"; movimiento: MovimientoInventario }
   | null;
+
+const TABS: { id: Vista; label: string; short: string }[] = [
+  { id: "inventario", label: "Inventario", short: "Inv" },
+  { id: "compras", label: "Compras", short: "Com" },
+  { id: "ventas", label: "Ventas", short: "Ven" },
+  { id: "resumen", label: "Resumen", short: "Fin" },
+];
 
 export function App() {
   const {
@@ -44,14 +50,16 @@ export function App() {
     agregarHelado,
     editarHelado,
     eliminarHelado,
+    registrarCompra,
     registrarMovimiento,
     editarMovimiento,
+    diezmosEntregados,
+    marcarDiezmoEntregado,
   } = useInventario();
 
   const [vista, setVista] = useState<Vista>("inventario");
   const [modal, setModal] = useState<Modal>(null);
   const [rango, setRango] = useState<RangoFechas>(() => rangoMesActual());
-  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>("TODOS");
 
   const movimientosPorFecha = useMemo(
     () =>
@@ -61,12 +69,19 @@ export function App() {
     [movimientos, rango]
   );
 
-  const movimientosFiltrados = useMemo(
+  const comprasFiltradas = useMemo(
     () =>
       movimientosPorFecha.filter(
-        (m) => filtroTipo === "TODOS" || m.tipo === filtroTipo
+        (m) =>
+          m.tipo === TipoMovimiento.ENTRADA || m.tipo === TipoMovimiento.GASTO
       ),
-    [movimientosPorFecha, filtroTipo]
+    [movimientosPorFecha]
+  );
+
+  const ventasFiltradas = useMemo(
+    () =>
+      movimientosPorFecha.filter((m) => m.tipo === TipoMovimiento.SALIDA),
+    [movimientosPorFecha]
   );
 
   const resumenPeriodo = useMemo(() => {
@@ -79,9 +94,10 @@ export function App() {
     return ResumenFinanciero.desdeMovimientos(
       movimientosPorFecha,
       valorCosto,
-      valorVenta
+      valorVenta,
+      movimientos
     );
-  }, [helados, movimientosPorFecha]);
+  }, [helados, movimientosPorFecha, movimientos]);
 
   const etiquetaFechas = useMemo(() => {
     const desde = inicioDelDia(rango.desde);
@@ -92,19 +108,11 @@ export function App() {
     return `${format(desde, "d MMM", { locale: esDateFns })} → ${format(hasta, "d MMM yyyy", { locale: esDateFns })}`;
   }, [rango]);
 
-  const etiquetaPeriodo = useMemo(() => {
-    const tipoLabel =
-      OPCIONES_TIPO.find((o) => o.value === filtroTipo)?.label ?? "Todos";
-    return filtroTipo === "TODOS"
-      ? etiquetaFechas
-      : `${etiquetaFechas} · ${tipoLabel}`;
-  }, [etiquetaFechas, filtroTipo]);
-
   const resetHelados = String(helados.length);
-  const resetMovs = `${rango.desde}|${rango.hasta}|${filtroTipo}|${movimientosFiltrados.length}`;
+  const resetVentas = `${rango.desde}|${rango.hasta}|${ventasFiltradas.length}`;
 
   const pagHelados = usePaginacion(helados, resetHelados);
-  const pagMovs = usePaginacion(movimientosFiltrados, resetMovs);
+  const pagVentas = usePaginacion(ventasFiltradas, resetVentas);
 
   function cerrarModal() {
     setModal(null);
@@ -136,26 +144,30 @@ export function App() {
             + Helado
           </button>
         )}
-        {vista === "movimientos" && (
+        {vista === "compras" && (
           <button
             type="button"
             className="btn btn--primary"
-            onClick={() => setModal({ tipo: "movimiento" })}
+            onClick={() => setModal({ tipo: "compra" })}
             disabled={loading || saving}
           >
-            + Movimiento
+            + Compra
+          </button>
+        )}
+        {vista === "ventas" && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => setModal({ tipo: "venta" })}
+            disabled={loading || saving}
+          >
+            + Venta
           </button>
         )}
       </header>
 
       <nav className="tabs" aria-label="Secciones">
-        {(
-          [
-            ["inventario", "Inventario"],
-            ["movimientos", "Movimientos"],
-            ["resumen", "Resumen"],
-          ] as const
-        ).map(([id, label]) => (
+        {TABS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
@@ -186,7 +198,7 @@ export function App() {
               <HeladoList
                 helados={pagHelados.items}
                 onEditar={(h) => setModal({ tipo: "editar", helado: h })}
-                onMovimiento={(h) => setModal({ tipo: "movimiento", helado: h })}
+                onMovimiento={(h) => setModal({ tipo: "venta", helado: h })}
                 onEliminar={(h) => {
                   void eliminarHelado(h.id);
                 }}
@@ -202,44 +214,13 @@ export function App() {
             </section>
           )}
 
-          {vista === "movimientos" && (
+          {vista === "compras" && (
             <section className="panel">
               <div className="panel__head">
-                <h2 className="panel__title">Movimientos</h2>
+                <h2 className="panel__title">Compras</h2>
                 <span className="panel__meta">
-                  {movimientosFiltrados.length} filtrados
+                  Facturas y gastos del periodo
                 </span>
-              </div>
-
-              <FiltrosMovimientos
-                rango={rango}
-                onRangoChange={setRango}
-                filtroTipo={filtroTipo}
-                onTipoChange={setFiltroTipo}
-                resumenEtiqueta={etiquetaPeriodo}
-              />
-
-              <MovimientoList
-                movimientos={pagMovs.items}
-                onEditar={(m) =>
-                  setModal({ tipo: "editar-movimiento", movimiento: m })
-                }
-              />
-              <Paginacion
-                pagina={pagMovs.pagina}
-                totalPaginas={pagMovs.totalPaginas}
-                total={pagMovs.total}
-                porPagina={pagMovs.porPagina}
-                onAnterior={() => pagMovs.setPagina((p) => p - 1)}
-                onSiguiente={() => pagMovs.setPagina((p) => p + 1)}
-              />
-            </section>
-          )}
-
-          {vista === "resumen" && (
-            <section className="panel">
-              <div className="panel__head">
-                <h2 className="panel__title">Resumen del periodo</h2>
               </div>
 
               <FiltrosMovimientos
@@ -250,80 +231,96 @@ export function App() {
               />
 
               <p className="hint">
-                Ingresos = ventas (precio cobrado, incl. especial) + consumo
-                personal (precio de costo). La ganancia y el diezmo solo salen
-                de las ventas. La inversión suma entradas de helados + gastos
-                (cartel, cucharas, etc.). El valor del inventario es el stock
-                actual.
+                Cada compra es una factura: helados y extras (afiche, cucharas…)
+                en la misma inversión del resumen.
               </p>
-              <ResumenStats resumen={resumenPeriodo} periodo={etiquetaFechas} />
-              <div className="resumen-grid" style={{ marginBottom: "1rem" }}>
-                <div className="meta-block">
-                  <span>Inversión del periodo</span>
-                  <strong>
-                    {formatearMoneda(resumenPeriodo.totalInversion.pesos)}
-                  </strong>
-                </div>
-                <div className="meta-block meta-block--ganancia">
-                  <span>Ingresos del periodo</span>
-                  <strong>
-                    {formatearMoneda(resumenPeriodo.totalIngresos.pesos)}
-                  </strong>
-                </div>
-                <div className="meta-block">
-                  <span>Valor inventario (costo)</span>
-                  <strong>
-                    {formatearMoneda(resumenPeriodo.valorInventarioCosto.pesos)}
-                  </strong>
-                </div>
-                <div className="meta-block">
-                  <span>Entradas / Salidas</span>
-                  <strong>
-                    {resumenPeriodo.totalEntradas} / {resumenPeriodo.totalSalidas}
-                  </strong>
-                </div>
+
+              <CompraList
+                movimientos={comprasFiltradas}
+                vacioMensaje="Sin compras en este periodo. Pulsa + Compra."
+                onEditarGasto={(m) =>
+                  setModal({ tipo: "editar-movimiento", movimiento: m })
+                }
+              />
+            </section>
+          )}
+
+          {vista === "ventas" && (
+            <section className="panel">
+              <div className="panel__head">
+                <h2 className="panel__title">Ventas · Caja</h2>
+                <span className="panel__meta">
+                  {ventasFiltradas.length} en el periodo
+                </span>
               </div>
-              <div className="list">
-                <div className="helado-item">
-                  <div className="resumen-grid">
-                    <div className="meta-block">
-                      <span>Ganancia bruta</span>
-                      <strong>
-                        {formatearMoneda(resumenPeriodo.totalGanancia.pesos)}
-                      </strong>
-                    </div>
-                    <div className="meta-block">
-                      <span>Diezmo (solo ventas)</span>
-                      <strong>
-                        {formatearMoneda(resumenPeriodo.totalDiezmo.pesos)}
-                      </strong>
-                    </div>
-                    <div className="meta-block">
-                      <span>Ganancia neta</span>
-                      <strong>
-                        {formatearMoneda(resumenPeriodo.gananciaNeta.pesos)}
-                      </strong>
-                    </div>
-                    <div className="meta-block">
-                      <span>Unidades vendidas</span>
-                      <strong>{resumenPeriodo.unidadesVendidas}</strong>
-                    </div>
-                  </div>
-                </div>
+
+              <FiltrosMovimientos
+                rango={rango}
+                onRangoChange={setRango}
+                resumenEtiqueta={etiquetaFechas}
+                mostrarTipo={false}
+              />
+
+              <p className="hint">
+                Aquí ves lo cobrado. La utilidad y el diezmo se calculan en
+                Resumen: ingresos − inversión.
+              </p>
+
+              <MovimientoList
+                movimientos={pagVentas.items}
+                vacioMensaje="Sin ventas en este periodo. Pulsa + Venta para cobrar."
+                onEditar={(m) =>
+                  setModal({ tipo: "editar-movimiento", movimiento: m })
+                }
+              />
+              <Paginacion
+                pagina={pagVentas.pagina}
+                totalPaginas={pagVentas.totalPaginas}
+                total={pagVentas.total}
+                porPagina={pagVentas.porPagina}
+                onAnterior={() => pagVentas.setPagina((p) => p - 1)}
+                onSiguiente={() => pagVentas.setPagina((p) => p + 1)}
+              />
+            </section>
+          )}
+
+          {vista === "resumen" && (
+            <section className="panel">
+              <div className="panel__head">
+                <h2 className="panel__title">Resumen por factura</h2>
+                <span className="panel__meta">
+                  {resumenPeriodo.compras.length} facturas
+                </span>
               </div>
+
+              <FiltrosMovimientos
+                rango={rango}
+                onRangoChange={setRango}
+                resumenEtiqueta={etiquetaFechas}
+                mostrarTipo={false}
+              />
+
+              <p className="hint">
+                Por cada factura: utilidad = ingresos de sus ventas −
+                inversión. Diezmo = 10% de la utilidad (si es positiva). Marca
+                el check cuando ya lo hayas entregado.
+              </p>
+
+              <ResumenComprasList
+                compras={resumenPeriodo.compras}
+                diezmosEntregados={diezmosEntregados}
+                saving={saving}
+                onToggleDiezmo={(compraId, entregado) => {
+                  void marcarDiezmoEntregado(compraId, entregado);
+                }}
+              />
             </section>
           )}
         </>
       )}
 
       <nav className="bottom-nav" aria-label="Navegación móvil">
-        {(
-          [
-            ["inventario", "Inv"],
-            ["movimientos", "Mov"],
-            ["resumen", "Fin"],
-          ] as const
-        ).map(([id, short]) => (
+        {TABS.map(({ id, label, short }) => (
           <button
             key={id}
             type="button"
@@ -331,13 +328,7 @@ export function App() {
             onClick={() => setVista(id)}
           >
             <span aria-hidden="true">{short}</span>
-            <span>
-              {id === "inventario"
-                ? "Inventario"
-                : id === "movimientos"
-                  ? "Movimientos"
-                  : "Resumen"}
-            </span>
+            <span>{label}</span>
           </button>
         ))}
       </nav>
@@ -382,9 +373,28 @@ export function App() {
         </Sheet>
       )}
 
-      {modal?.tipo === "movimiento" && (
-        <Sheet title="Registrar movimiento" onClose={cerrarModal}>
-          <MovimientoForm
+      {modal?.tipo === "compra" && (
+        <Sheet title="Registrar compra (factura)" onClose={cerrarModal}>
+          <CompraForm
+            helados={helados}
+            heladoPreseleccionado={modal.helado}
+            onCancel={cerrarModal}
+            onSubmitCompra={(data) => {
+              void (async () => {
+                const ok = await registrarCompra(data);
+                if (ok) {
+                  cerrarModal();
+                  setVista("compras");
+                }
+              })();
+            }}
+          />
+        </Sheet>
+      )}
+
+      {modal?.tipo === "venta" && (
+        <Sheet title="Caja · Cobrar venta" onClose={cerrarModal}>
+          <VentaForm
             helados={helados}
             heladoPreseleccionado={modal.helado}
             onCancel={cerrarModal}
@@ -393,7 +403,7 @@ export function App() {
                 const ok = await registrarMovimiento(data);
                 if (ok) {
                   cerrarModal();
-                  setVista("movimientos");
+                  setVista("ventas");
                 }
               })();
             }}
@@ -402,7 +412,7 @@ export function App() {
       )}
 
       {modal?.tipo === "editar-movimiento" && (
-        <Sheet title="Editar movimiento" onClose={cerrarModal}>
+        <Sheet title="Editar registro" onClose={cerrarModal}>
           <EditarMovimientoForm
             movimiento={modal.movimiento}
             onCancel={cerrarModal}

@@ -30,7 +30,9 @@ create table if not exists public.movimientos (
   ganancia_total numeric(14, 2) not null default 0,
   diezmo numeric(14, 2) not null default 0,
   nota text not null default '',
-  fecha timestamptz not null default now()
+  fecha timestamptz not null default now(),
+  -- Varias ENTRADAs con el mismo compra_id = una factura de compra
+  compra_id uuid
 );
 
 create index if not exists movimientos_fecha_idx on public.movimientos (fecha desc);
@@ -58,5 +60,24 @@ create policy "movimientos_all_anon"
   using (true)
   with check (true);
 
--- Si ya creaste las tablas antes, ejecuta también migrate-consumo-personal.sql
--- y migrate-gasto.sql (GASTO + helado_id nullable).
+create table if not exists public.diezmos_compra (
+  compra_id uuid primary key,
+  entregado boolean not null default true,
+  actualizado_en timestamptz not null default now()
+);
+
+alter table public.diezmos_compra enable row level security;
+
+drop policy if exists "diezmos_compra_all_anon" on public.diezmos_compra;
+create policy "diezmos_compra_all_anon"
+  on public.diezmos_compra
+  for all
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+-- Si ya creaste las tablas antes, ejecuta UNA sola vez:
+--   supabase/migrate-actualizar.sql
+-- (incluye tipos, helado_id nullable, compra_id y diezmos_compra).
+-- No ejecutes migrate-consumo-personal.sql + migrate-gasto.sql a la vez
+-- en orden viejo: el primero sin GASTO falla si ya hay gastos.

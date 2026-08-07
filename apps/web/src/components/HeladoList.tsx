@@ -56,7 +56,7 @@ export function HeladoList({ helados, onEditar, onMovimiento, onEliminar }: Prop
                 className="btn btn--primary btn--sm"
                 onClick={() => onMovimiento(h)}
               >
-                Movimiento
+                Vender
               </button>
               <button
                 type="button"
