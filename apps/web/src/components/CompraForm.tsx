@@ -25,8 +25,6 @@ interface Props {
   onCancel: () => void;
 }
 
-const EXTRAS_SUGERIDOS = ["Afiche", "Cucharas"] as const;
-
 function nuevaLinea(heladoId = ""): LineaDraft {
   return {
     key: crypto.randomUUID(),
@@ -35,10 +33,10 @@ function nuevaLinea(heladoId = ""): LineaDraft {
   };
 }
 
-function nuevoExtra(concepto = ""): ExtraDraft {
+function nuevoExtra(): ExtraDraft {
   return {
     key: crypto.randomUUID(),
-    concepto,
+    concepto: "",
     monto: "",
   };
 }
@@ -92,15 +90,6 @@ export function CompraForm({
     );
   }
 
-  function agregarExtraSugerido(concepto: string) {
-    setExtras((prev) => {
-      if (prev.some((e) => e.concepto.trim().toLowerCase() === concepto.toLowerCase())) {
-        return prev;
-      }
-      return [...prev, nuevoExtra(concepto)];
-    });
-  }
-
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -130,10 +119,7 @@ export function CompraForm({
 
   return (
     <form className="form" onSubmit={handleSubmit}>
-      <p className="hint">
-        Una compra es una <strong>factura</strong>: varios helados y, si aplica,
-        afiche o cucharas en la misma factura (misma inversión / diezmo).
-      </p>
+
 
       <div className="factura-lineas">
         {lineas.map((linea) => (

@@ -230,11 +230,6 @@ export function App() {
                 mostrarTipo={false}
               />
 
-              <p className="hint">
-                Cada compra es una factura: helados y extras (afiche, cucharas…)
-                en la misma inversión del resumen.
-              </p>
-
               <CompraList
                 movimientos={comprasFiltradas}
                 vacioMensaje="Sin compras en este periodo. Pulsa + Compra."
@@ -260,11 +255,6 @@ export function App() {
                 resumenEtiqueta={etiquetaFechas}
                 mostrarTipo={false}
               />
-
-              <p className="hint">
-                Aquí ves lo cobrado. La utilidad y el diezmo se calculan en
-                Resumen: ingresos − inversión.
-              </p>
 
               <MovimientoList
                 movimientos={pagVentas.items}
@@ -299,12 +289,6 @@ export function App() {
                 resumenEtiqueta={etiquetaFechas}
                 mostrarTipo={false}
               />
-
-              <p className="hint">
-                Por cada factura: utilidad = ingresos de sus ventas −
-                inversión. Diezmo = 10% de la utilidad (si es positiva). Marca
-                el check cuando ya lo hayas entregado.
-              </p>
 
               <ResumenComprasList
                 compras={resumenPeriodo.compras}
