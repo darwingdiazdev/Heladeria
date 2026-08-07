@@ -515,9 +515,9 @@ button {
   bottom: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem calc(0.5rem + var(--safe-bottom));
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.2rem;
+  padding: 0.5rem 0.45rem calc(0.5rem + var(--safe-bottom));
   background: rgba(26, 16, 40, 0.96);
   border-top: 1px solid var(--border);
   backdrop-filter: blur(16px);
@@ -543,16 +543,24 @@ button {
   border: none;
   background: transparent;
   color: var(--text-muted);
-  padding: 0.45rem 0.25rem;
-  font-size: 0.7rem;
+  padding: 0.4rem 0.15rem;
+  font-size: 0.62rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
+  min-width: 0;
+}
+
+.bottom-nav__btn span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bottom-nav__btn span:first-child {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   opacity: 0.85;
   line-height: 1;
