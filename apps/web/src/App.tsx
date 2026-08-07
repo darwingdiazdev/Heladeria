@@ -125,7 +125,7 @@ export function App() {
         <div className="brand">
           <img
             className="brand__logo"
-            src="/logo.png"
+            src="/brand.png"
             alt="Helados"
             width={64}
             height={64}
