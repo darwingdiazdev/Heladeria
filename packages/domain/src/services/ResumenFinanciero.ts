@@ -71,6 +71,8 @@ export class ResumenFinanciero {
       } else if (m.tipo === TipoMovimiento.ENTRADA) {
         totalEntradas += m.cantidad;
         totalInversion = totalInversion.sumar(m.gastoInversion);
+      } else if (m.tipo === TipoMovimiento.GASTO) {
+        totalInversion = totalInversion.sumar(m.gastoInversion);
       }
     }
 

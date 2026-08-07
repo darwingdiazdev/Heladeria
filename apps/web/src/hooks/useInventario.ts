@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   ActualizarHeladoDTO,
   CrearHeladoDTO,
+  EditarMovimientoDTO,
   Helado,
   MovimientoInventario,
   RegistrarMovimientoDTO,
@@ -92,5 +93,7 @@ export function useInventario() {
       }),
     registrarMovimiento: (dto: RegistrarMovimientoDTO) =>
       run(() => inventarioService.registrarMovimiento(dto)),
+    editarMovimiento: (id: string, dto: EditarMovimientoDTO) =>
+      run(() => inventarioService.editarMovimiento(id, dto)),
   };
 }

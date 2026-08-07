@@ -5,6 +5,8 @@ export enum TipoMovimiento {
   SALIDA = "SALIDA",
   CONSUMO_PERSONAL = "CONSUMO_PERSONAL",
   AJUSTE = "AJUSTE",
+  /** Compra de insumos / materiales que no son helado (cartel, cucharas, etc.). */
+  GASTO = "GASTO",
 }
 
 export interface MovimientoProps {
@@ -74,7 +76,11 @@ export class MovimientoInventario {
     return this.tipo === TipoMovimiento.CONSUMO_PERSONAL;
   }
 
-  /** Gasto de inversión = cantidad × precio de costo (entradas). */
+  get esGasto(): boolean {
+    return this.tipo === TipoMovimiento.GASTO;
+  }
+
+  /** Gasto de inversión = cantidad × precio de costo (entradas y gastos). */
   get gastoInversion(): Dinero {
     return this.precioCostoUnitario.multiplicar(this.cantidad);
   }
@@ -104,6 +110,8 @@ export class MovimientoInventario {
         return "Consumo personal";
       case TipoMovimiento.AJUSTE:
         return "Ajuste";
+      case TipoMovimiento.GASTO:
+        return "Gasto / inversión";
       default:
         return this.tipo;
     }

@@ -12,5 +12,6 @@ export interface IInventarioRepository {
   eliminarHelado(id: string): Promise<void>;
   listarMovimientos(): Promise<MovimientoInventario[]>;
   guardarMovimiento(movimiento: MovimientoInventario): Promise<void>;
+  actualizarMovimiento(movimiento: MovimientoInventario): Promise<void>;
   limpiarTodo(): Promise<void>;
 }

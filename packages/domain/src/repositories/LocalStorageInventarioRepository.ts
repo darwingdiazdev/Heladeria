@@ -61,6 +61,16 @@ export class LocalStorageInventarioRepository implements IInventarioRepository {
     this.guardar(data);
   }
 
+  async actualizarMovimiento(movimiento: MovimientoInventario): Promise<void> {
+    const data = this.cargar();
+    const idx = data.movimientos.findIndex((m) => m.id === movimiento.id);
+    if (idx < 0) {
+      throw new Error(`Movimiento no encontrado: ${movimiento.id}`);
+    }
+    data.movimientos[idx] = movimiento.toJSON();
+    this.guardar(data);
+  }
+
   async limpiarTodo(): Promise<void> {
     this.cache = { helados: [], movimientos: [] };
     if (typeof localStorage !== "undefined") {

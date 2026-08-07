@@ -1,11 +1,18 @@
-import type { MovimientoInventario } from "@inventario/domain";
+import { TipoMovimiento, type MovimientoInventario } from "@inventario/domain";
 import { formatearFecha, formatearMoneda } from "../lib/inventario";
 
 interface Props {
   movimientos: MovimientoInventario[];
+  onEditar?: (movimiento: MovimientoInventario) => void;
 }
 
-export function MovimientoList({ movimientos }: Props) {
+function sePuedeEditar(m: MovimientoInventario): boolean {
+  return (
+    m.tipo === TipoMovimiento.SALIDA || m.tipo === TipoMovimiento.GASTO
+  );
+}
+
+export function MovimientoList({ movimientos, onEditar }: Props) {
   if (movimientos.length === 0) {
     return (
       <div className="empty">
@@ -23,8 +30,11 @@ export function MovimientoList({ movimientos }: Props) {
             <span className="mov-item__tipo">{m.etiquetaTipo}</span>
           </div>
           <p className="mov-item__detail">
-            Cantidad: {m.cantidad} · Stock {m.stockAnterior} → {m.stockNuevo}
-            {m.nota ? ` · ${m.nota}` : ""}
+            {m.esGasto
+              ? m.nota || "Inversión extra (sin stock)"
+              : `Cantidad: ${m.cantidad} · Stock ${m.stockAnterior} → ${m.stockNuevo}${
+                  m.nota ? ` · ${m.nota}` : ""
+                }`}
           </p>
           <p className="mov-item__detail">{formatearFecha(m.fecha)}</p>
           {m.esEntrada && (
@@ -37,10 +47,20 @@ export function MovimientoList({ movimientos }: Props) {
               </span>
             </div>
           )}
+          {m.esGasto && (
+            <div className="mov-item__money">
+              <span className="pill pill--inversion">
+                Inversión {formatearMoneda(m.gastoInversion.pesos)}
+              </span>
+            </div>
+          )}
           {m.esVenta && (
             <div className="mov-item__money">
               <span className="pill pill--inversion">
                 Ingreso {formatearMoneda(m.ingreso.pesos)}
+              </span>
+              <span className="pill pill--consumo">
+                {formatearMoneda(m.precioVentaUnitario.pesos)} / u × {m.cantidad}
               </span>
               <span className="pill">
                 Ganancia {formatearMoneda(m.gananciaTotal.pesos)}
@@ -56,6 +76,17 @@ export function MovimientoList({ movimientos }: Props) {
                 Ingreso a costo {formatearMoneda(m.ingreso.pesos)} · sin
                 ganancia
               </span>
+            </div>
+          )}
+          {onEditar && sePuedeEditar(m) && (
+            <div className="mov-item__actions">
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => onEditar(m)}
+              >
+                Editar
+              </button>
             </div>
           )}
         </article>

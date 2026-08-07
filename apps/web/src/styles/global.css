@@ -919,6 +919,7 @@ button {
 .mov-item--ENTRADA { border-left-color: var(--accent); }
 .mov-item--SALIDA { border-left-color: var(--coral); }
 .mov-item--CONSUMO_PERSONAL { border-left-color: var(--gold); }
+.mov-item--GASTO { border-left-color: var(--gold); }
 .mov-item--AJUSTE { border-left-color: var(--text-muted); }
 
 .mov-item__row {
@@ -958,6 +959,12 @@ button {
 .mov-item__money .pill {
   font-size: 0.7rem;
   padding: 0.1rem 0.4rem;
+}
+
+.mov-item__actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
 }
 
 @media (min-width: 640px) {

@@ -7,6 +7,7 @@ export const OPCIONES_TIPO: { value: FiltroTipo; label: string }[] = [
   { value: TipoMovimiento.ENTRADA, label: "Entrada" },
   { value: TipoMovimiento.SALIDA, label: "Venta" },
   { value: TipoMovimiento.CONSUMO_PERSONAL, label: "Consumo" },
+  { value: TipoMovimiento.GASTO, label: "Gasto" },
   { value: TipoMovimiento.AJUSTE, label: "Ajuste" },
 ];
 

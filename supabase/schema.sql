@@ -18,9 +18,10 @@ create table if not exists public.helados (
 
 create table if not exists public.movimientos (
   id uuid primary key default gen_random_uuid(),
-  helado_id uuid not null references public.helados (id) on delete cascade,
+  -- Nullable: gastos de inversión (cartel, cucharas…) no van ligados a un helado
+  helado_id uuid references public.helados (id) on delete cascade,
   helado_nombre text not null,
-  tipo text not null check (tipo in ('ENTRADA', 'SALIDA', 'CONSUMO_PERSONAL', 'AJUSTE')),
+  tipo text not null check (tipo in ('ENTRADA', 'SALIDA', 'CONSUMO_PERSONAL', 'AJUSTE', 'GASTO')),
   cantidad integer not null check (cantidad >= 0),
   stock_anterior integer not null,
   stock_nuevo integer not null,
@@ -57,8 +58,5 @@ create policy "movimientos_all_anon"
   using (true)
   with check (true);
 
--- Si ya creaste las tablas antes, ejecuta también esto para permitir consumo personal:
--- alter table public.movimientos drop constraint if exists movimientos_tipo_check;
--- alter table public.movimientos
---   add constraint movimientos_tipo_check
---   check (tipo in ('ENTRADA', 'SALIDA', 'CONSUMO_PERSONAL', 'AJUSTE'));
+-- Si ya creaste las tablas antes, ejecuta también migrate-consumo-personal.sql
+-- y migrate-gasto.sql (GASTO + helado_id nullable).

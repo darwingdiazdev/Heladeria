@@ -20,7 +20,7 @@ interface HeladoRow {
 
 interface MovimientoRow {
   id: string;
-  helado_id: string;
+  helado_id: string | null;
   helado_nombre: string;
   tipo: string;
   cantidad: number;
@@ -55,7 +55,7 @@ function mapHelado(row: HeladoRow): Helado {
 function mapMovimiento(row: MovimientoRow): MovimientoInventario {
   return MovimientoInventario.desdeJSON({
     id: row.id,
-    heladoId: row.helado_id,
+    heladoId: row.helado_id ?? "",
     heladoNombre: row.helado_nombre,
     tipo: row.tipo as TipoMovimiento,
     cantidad: row.cantidad,
@@ -133,7 +133,7 @@ export class SupabaseInventarioRepository implements IInventarioRepository {
     const json = movimiento.toJSON();
     const { error } = await this.client.from("movimientos").insert({
       id: json.id,
-      helado_id: json.heladoId,
+      helado_id: json.heladoId || null,
       helado_nombre: json.heladoNombre,
       tipo: json.tipo,
       cantidad: json.cantidad,
@@ -148,6 +148,31 @@ export class SupabaseInventarioRepository implements IInventarioRepository {
     });
 
     if (error) throw new Error(`Error al guardar movimiento: ${error.message}`);
+  }
+
+  async actualizarMovimiento(movimiento: MovimientoInventario): Promise<void> {
+    const json = movimiento.toJSON();
+    const { error } = await this.client
+      .from("movimientos")
+      .update({
+        helado_id: json.heladoId || null,
+        helado_nombre: json.heladoNombre,
+        tipo: json.tipo,
+        cantidad: json.cantidad,
+        stock_anterior: json.stockAnterior,
+        stock_nuevo: json.stockNuevo,
+        precio_costo_unitario: json.precioCostoUnitario,
+        precio_venta_unitario: json.precioVentaUnitario,
+        ganancia_total: json.gananciaTotal,
+        diezmo: json.diezmo,
+        nota: json.nota ?? "",
+        fecha: json.fecha,
+      })
+      .eq("id", json.id);
+
+    if (error) {
+      throw new Error(`Error al actualizar movimiento: ${error.message}`);
+    }
   }
 
   async limpiarTodo(): Promise<void> {

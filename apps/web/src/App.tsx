@@ -3,6 +3,7 @@ import {
   Dinero,
   ResumenFinanciero,
   type Helado,
+  type MovimientoInventario,
 } from "@inventario/domain";
 import { useInventario } from "./hooks/useInventario";
 import { ResumenStats } from "./components/ResumenStats";
@@ -10,6 +11,7 @@ import { HeladoList } from "./components/HeladoList";
 import { HeladoForm } from "./components/HeladoForm";
 import { MovimientoList } from "./components/MovimientoList";
 import { MovimientoForm } from "./components/MovimientoForm";
+import { EditarMovimientoForm } from "./components/EditarMovimientoForm";
 import { FiltrosMovimientos } from "./components/FiltrosMovimientos";
 import { type RangoFechas } from "./components/FiltroFechas";
 import {
@@ -28,6 +30,7 @@ type Modal =
   | { tipo: "crear" }
   | { tipo: "editar"; helado: Helado }
   | { tipo: "movimiento"; helado?: Helado }
+  | { tipo: "editar-movimiento"; movimiento: MovimientoInventario }
   | null;
 
 export function App() {
@@ -42,6 +45,7 @@ export function App() {
     editarHelado,
     eliminarHelado,
     registrarMovimiento,
+    editarMovimiento,
   } = useInventario();
 
   const [vista, setVista] = useState<Vista>("inventario");
@@ -137,7 +141,7 @@ export function App() {
             type="button"
             className="btn btn--primary"
             onClick={() => setModal({ tipo: "movimiento" })}
-            disabled={helados.length === 0 || loading || saving}
+            disabled={loading || saving}
           >
             + Movimiento
           </button>
@@ -215,7 +219,12 @@ export function App() {
                 resumenEtiqueta={etiquetaPeriodo}
               />
 
-              <MovimientoList movimientos={pagMovs.items} />
+              <MovimientoList
+                movimientos={pagMovs.items}
+                onEditar={(m) =>
+                  setModal({ tipo: "editar-movimiento", movimiento: m })
+                }
+              />
               <Paginacion
                 pagina={pagMovs.pagina}
                 totalPaginas={pagMovs.totalPaginas}
@@ -241,9 +250,11 @@ export function App() {
               />
 
               <p className="hint">
-                Ingresos = ventas (precio de venta) + consumo personal (precio
-                de costo). La ganancia y el diezmo solo salen de las ventas. El
-                valor del inventario es el stock actual.
+                Ingresos = ventas (precio cobrado, incl. especial) + consumo
+                personal (precio de costo). La ganancia y el diezmo solo salen
+                de las ventas. La inversión suma entradas de helados + gastos
+                (cartel, cucharas, etc.). El valor del inventario es el stock
+                actual.
               </p>
               <ResumenStats resumen={resumenPeriodo} periodo={etiquetaFechas} />
               <div className="resumen-grid" style={{ marginBottom: "1rem" }}>
@@ -384,6 +395,21 @@ export function App() {
                   cerrarModal();
                   setVista("movimientos");
                 }
+              })();
+            }}
+          />
+        </Sheet>
+      )}
+
+      {modal?.tipo === "editar-movimiento" && (
+        <Sheet title="Editar movimiento" onClose={cerrarModal}>
+          <EditarMovimientoForm
+            movimiento={modal.movimiento}
+            onCancel={cerrarModal}
+            onSubmit={(data) => {
+              void (async () => {
+                const ok = await editarMovimiento(modal.movimiento.id, data);
+                if (ok) cerrarModal();
               })();
             }}
           />

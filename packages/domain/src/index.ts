@@ -12,6 +12,7 @@ export {
   type CrearHeladoDTO,
   type ActualizarHeladoDTO,
   type RegistrarMovimientoDTO,
+  type EditarMovimientoDTO,
 } from "./services/InventarioService.js";
 export type { IInventarioRepository } from "./repositories/IInventarioRepository.js";
 export { LocalStorageInventarioRepository } from "./repositories/LocalStorageInventarioRepository.js";
