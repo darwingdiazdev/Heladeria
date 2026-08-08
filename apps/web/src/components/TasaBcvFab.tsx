@@ -31,7 +31,7 @@ interface Posicion {
 const CLAVE_POS = "inventario-helados-tasa-fab-pos";
 const FAB_SIZE = 60;
 const MARGIN = 8;
-const DRAG_THRESHOLD = 12;
+const DRAG_THRESHOLD = 18;
 
 function posicionPorDefecto(): Posicion {
   if (typeof window === "undefined") {
@@ -148,6 +148,7 @@ export function TasaBcvFab({ tasa, actualizadoEn, onActualizarTasa }: Props) {
 
   function onPointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
     if (e.button !== 0) return;
+    suppressClickRef.current = false;
     e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = {
       pointerId: e.pointerId,
@@ -194,16 +195,23 @@ export function TasaBcvFab({ tasa, actualizadoEn, onActualizarTasa }: Props) {
     dragRef.current = null;
     setArrastrando(false);
 
+    // Evita que el click nativo posterior duplique o anule la acción.
+    suppressClickRef.current = true;
+
     if (fueDrag) {
-      suppressClickRef.current = true;
       const next = acotar(posRef.current);
       posRef.current = next;
       setPos(next);
       guardarPosicion(next);
+      return;
     }
+
+    abrir();
   }
 
   function onClick() {
+    // Teclado (Enter/Espacio) o casos sin pointer: abrir.
+    // Tras pointer, suppressClick evita doble apertura / clic fantasma.
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
       return;
@@ -319,7 +327,7 @@ export function TasaBcvFab({ tasa, actualizadoEn, onActualizarTasa }: Props) {
                       required
                       value={nuevaTasa}
                       onChange={(e) => setNuevaTasa(e.target.value)}
-                      placeholder="Ej. 757.54"
+                      placeholder="Ej. 000.00"
                       autoFocus
                     />
                   </div>
