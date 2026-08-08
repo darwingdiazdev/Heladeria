@@ -7,6 +7,7 @@ import {
   type MovimientoInventario,
 } from "@inventario/domain";
 import { useInventario } from "./hooks/useInventario";
+import { useTasaBcv } from "./hooks/useTasaBcv";
 import { ResumenComprasList } from "./components/ResumenComprasList";
 import { HeladoList } from "./components/HeladoList";
 import { HeladoForm } from "./components/HeladoForm";
@@ -15,6 +16,7 @@ import { CompraList } from "./components/CompraList";
 import { VentaForm } from "./components/VentaForm";
 import { VentaList } from "./components/VentaList";
 import { EditarMovimientoForm } from "./components/EditarMovimientoForm";
+import { TasaBcvFab } from "./components/TasaBcvFab";
 import { FiltrosMovimientos } from "./components/FiltrosMovimientos";
 import { type RangoFechas } from "./components/FiltroFechas";
 import { Paginacion, usePaginacion } from "./components/Paginacion";
@@ -56,6 +58,8 @@ export function App() {
     diezmosEntregados,
     marcarDiezmoEntregado,
   } = useInventario();
+
+  const { tasa, actualizadoEn, actualizarTasa } = useTasaBcv();
 
   const [vista, setVista] = useState<Vista>("inventario");
   const [modal, setModal] = useState<Modal>(null);
@@ -309,6 +313,12 @@ export function App() {
           </button>
         ))}
       </nav>
+
+      <TasaBcvFab
+        tasa={tasa}
+        actualizadoEn={actualizadoEn}
+        onActualizarTasa={actualizarTasa}
+      />
 
       {modal?.tipo === "crear" && (
         <Sheet title="Nuevo helado" onClose={cerrarModal}>
