@@ -61,6 +61,19 @@ export interface RegistrarCompraDTO {
   nota?: string;
 }
 
+/** Una venta/ticket con uno o varios helados. */
+export interface RegistrarVentaDTO {
+  lineas: LineaVentaDTO[];
+  nota?: string;
+}
+
+export interface LineaVentaDTO {
+  heladoId: string;
+  cantidad: number;
+  /** Precio especial por unidad; si no se envía, usa el del catálogo. */
+  precioVentaUnitario?: number;
+}
+
 export interface EditarMovimientoDTO {
   /** Nuevo precio cobrado por unidad (solo SALIDA) */
   precioVentaUnitario?: number;
@@ -234,6 +247,91 @@ export class InventarioService {
     return creados;
   }
 
+  /**
+   * Registra un ticket de venta con una o varias líneas (helados distintos).
+   * Todas las salidas comparten el mismo id de ticket (compraId en persistencia).
+   */
+  async registrarVenta(
+    dto: RegistrarVentaDTO
+  ): Promise<MovimientoInventario[]> {
+    if (!dto.lineas.length) {
+      throw new Error("La venta debe tener al menos un helado");
+    }
+
+    const vistos = new Set<string>();
+    for (const linea of dto.lineas) {
+      if (!linea.heladoId) {
+        throw new Error("Cada línea necesita un helado");
+      }
+      if (!Number.isFinite(linea.cantidad) || linea.cantidad < 1) {
+        throw new Error("La cantidad de cada línea debe ser al menos 1");
+      }
+      if (vistos.has(linea.heladoId)) {
+        throw new Error(
+          "No repitas el mismo helado en el ticket; suma la cantidad en una sola línea"
+        );
+      }
+      vistos.add(linea.heladoId);
+      if (
+        linea.precioVentaUnitario !== undefined &&
+        (!Number.isFinite(linea.precioVentaUnitario) ||
+          linea.precioVentaUnitario < 0)
+      ) {
+        throw new Error("El precio especial debe ser un número mayor o igual a 0");
+      }
+    }
+
+    const ventaId = crypto.randomUUID();
+    const fecha = new Date().toISOString();
+    const creados: MovimientoInventario[] = [];
+
+    for (const linea of dto.lineas) {
+      const helado = await this.obtenerHelado(linea.heladoId);
+      if (linea.cantidad > helado.stock) {
+        throw new Error(
+          `Stock insuficiente de ${helado.nombre}: hay ${helado.stock}, pediste ${linea.cantidad}`
+        );
+      }
+
+      const stockAnterior = helado.stock;
+      helado.disminuirStock(linea.cantidad);
+      await this.repo.guardarHelado(helado);
+
+      const precioVentaUnitario =
+        linea.precioVentaUnitario !== undefined
+          ? linea.precioVentaUnitario
+          : helado.precioVenta.pesos;
+      const gananciaUnitariaPesos = Math.max(
+        0,
+        precioVentaUnitario - helado.precioCosto.pesos
+      );
+      const gananciaTotal = Dinero.dePesos(gananciaUnitariaPesos).multiplicar(
+        linea.cantidad
+      );
+
+      const movimiento = new MovimientoInventario({
+        id: crypto.randomUUID(),
+        heladoId: helado.id,
+        heladoNombre: helado.nombre,
+        tipo: TipoMovimiento.SALIDA,
+        cantidad: linea.cantidad,
+        stockAnterior,
+        stockNuevo: helado.stock,
+        precioCostoUnitario: helado.precioCosto.pesos,
+        precioVentaUnitario,
+        gananciaTotal: gananciaTotal.pesos,
+        diezmo: 0,
+        nota: dto.nota,
+        fecha,
+        compraId: ventaId,
+      });
+      await this.repo.guardarMovimiento(movimiento);
+      creados.push(movimiento);
+    }
+
+    return creados;
+  }
+
   async registrarMovimiento(
     dto: RegistrarMovimientoDTO
   ): Promise<MovimientoInventario> {
@@ -282,6 +380,9 @@ export class InventarioService {
           dto.cantidad
         );
         diezmo = Dinero.cero();
+        if (!compraId) {
+          compraId = crypto.randomUUID();
+        }
         break;
       }
       case TipoMovimiento.CONSUMO_PERSONAL: {

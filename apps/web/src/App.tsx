@@ -10,10 +10,10 @@ import { useInventario } from "./hooks/useInventario";
 import { ResumenComprasList } from "./components/ResumenComprasList";
 import { HeladoList } from "./components/HeladoList";
 import { HeladoForm } from "./components/HeladoForm";
-import { MovimientoList } from "./components/MovimientoList";
 import { CompraForm } from "./components/CompraForm";
 import { CompraList } from "./components/CompraList";
 import { VentaForm } from "./components/VentaForm";
+import { VentaList } from "./components/VentaList";
 import { EditarMovimientoForm } from "./components/EditarMovimientoForm";
 import { FiltrosMovimientos } from "./components/FiltrosMovimientos";
 import { type RangoFechas } from "./components/FiltroFechas";
@@ -32,11 +32,11 @@ type Modal =
   | { tipo: "editar-movimiento"; movimiento: MovimientoInventario }
   | null;
 
-const TABS: { id: Vista; label: string; short: string }[] = [
-  { id: "inventario", label: "Inventario", short: "Inv" },
-  { id: "compras", label: "Compras", short: "Com" },
-  { id: "ventas", label: "Ventas", short: "Ven" },
-  { id: "resumen", label: "Resumen", short: "Fin" },
+const TABS: { id: Vista; label: string }[] = [
+  { id: "inventario", label: "Inventario" },
+  { id: "compras", label: "Compras" },
+  { id: "ventas", label: "Ventas" },
+  { id: "resumen", label: "Resumen" },
 ];
 
 export function App() {
@@ -51,7 +51,7 @@ export function App() {
     editarHelado,
     eliminarHelado,
     registrarCompra,
-    registrarMovimiento,
+    registrarVenta,
     editarMovimiento,
     diezmosEntregados,
     marcarDiezmoEntregado,
@@ -109,10 +109,7 @@ export function App() {
   }, [rango]);
 
   const resetHelados = String(helados.length);
-  const resetVentas = `${rango.desde}|${rango.hasta}|${ventasFiltradas.length}`;
-
   const pagHelados = usePaginacion(helados, resetHelados);
-  const pagVentas = usePaginacion(ventasFiltradas, resetVentas);
 
   function cerrarModal() {
     setModal(null);
@@ -256,20 +253,17 @@ export function App() {
                 mostrarTipo={false}
               />
 
-              <MovimientoList
-                movimientos={pagVentas.items}
+              <p className="hint">
+                Cada ticket puede incluir varios helados distintos. El diezmo se
+                calcula en Resumen por factura de compra.
+              </p>
+
+              <VentaList
+                movimientos={ventasFiltradas}
                 vacioMensaje="Sin ventas en este periodo. Pulsa + Venta para cobrar."
                 onEditar={(m) =>
                   setModal({ tipo: "editar-movimiento", movimiento: m })
                 }
-              />
-              <Paginacion
-                pagina={pagVentas.pagina}
-                totalPaginas={pagVentas.totalPaginas}
-                total={pagVentas.total}
-                porPagina={pagVentas.porPagina}
-                onAnterior={() => pagVentas.setPagina((p) => p - 1)}
-                onSiguiente={() => pagVentas.setPagina((p) => p + 1)}
               />
             </section>
           )}
@@ -304,15 +298,14 @@ export function App() {
       )}
 
       <nav className="bottom-nav" aria-label="Navegación móvil">
-        {TABS.map(({ id, label, short }) => (
+        {TABS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             className={`bottom-nav__btn${vista === id ? " bottom-nav__btn--active" : ""}`}
             onClick={() => setVista(id)}
           >
-            <span aria-hidden="true">{short}</span>
-            <span>{label}</span>
+            {label}
           </button>
         ))}
       </nav>
@@ -384,7 +377,7 @@ export function App() {
             onCancel={cerrarModal}
             onSubmit={(data) => {
               void (async () => {
-                const ok = await registrarMovimiento(data);
+                const ok = await registrarVenta(data);
                 if (ok) {
                   cerrarModal();
                   setVista("ventas");

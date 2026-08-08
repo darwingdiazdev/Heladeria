@@ -22,6 +22,8 @@ export {
   type RegistrarCompraDTO,
   type LineaCompraDTO,
   type ExtraCompraDTO,
+  type RegistrarVentaDTO,
+  type LineaVentaDTO,
   type EditarMovimientoDTO,
 } from "./services/InventarioService.js";
 export type { IInventarioRepository } from "./repositories/IInventarioRepository.js";

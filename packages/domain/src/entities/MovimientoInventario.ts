@@ -24,8 +24,9 @@ export interface MovimientoProps {
   nota?: string;
   fecha?: string;
   /**
-   * Id de factura/compra. Varias ENTRADAs con el mismo compraId
-   * forman una sola compra (varios helados).
+   * Id de agrupación:
+   * - ENTRADA/GASTO → factura de compra
+   * - SALIDA → ticket de venta (varios helados en la misma cobranza)
    * Si falta (datos viejos), se usa el id del movimiento.
    */
   compraId?: string;

@@ -7,6 +7,7 @@ import type {
   MovimientoInventario,
   RegistrarCompraDTO,
   RegistrarMovimientoDTO,
+  RegistrarVentaDTO,
   ResumenFinanciero,
 } from "@inventario/domain";
 import {
@@ -101,6 +102,8 @@ export function useInventario() {
       }),
     registrarCompra: (dto: RegistrarCompraDTO) =>
       run(() => inventarioService.registrarCompra(dto)),
+    registrarVenta: (dto: RegistrarVentaDTO) =>
+      run(() => inventarioService.registrarVenta(dto)),
     registrarMovimiento: (dto: RegistrarMovimientoDTO) =>
       run(() => inventarioService.registrarMovimiento(dto)),
     editarMovimiento: (id: string, dto: EditarMovimientoDTO) =>

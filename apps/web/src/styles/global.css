@@ -539,31 +539,19 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.2rem;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  padding: 0.4rem 0.15rem;
-  font-size: 0.62rem;
+  padding: 0.55rem 0.15rem;
+  font-size: 0.72rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
   min-width: 0;
-}
-
-.bottom-nav__btn span:last-child {
-  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.bottom-nav__btn span:first-child {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.85;
-  line-height: 1;
 }
 
 .bottom-nav__btn--active {
@@ -823,6 +811,15 @@ button {
   align-items: end;
 }
 
+.factura-linea-row--venta-helado {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 0.55rem;
+}
+
+.factura-linea-row--venta-datos {
+  grid-template-columns: 1fr 1fr;
+}
+
 .factura-linea-row__quitar {
   margin-bottom: 0.15rem;
   white-space: nowrap;
@@ -855,9 +852,16 @@ button {
     grid-template-columns: 1fr 1fr;
   }
 
+  .factura-linea-row--venta-helado {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .factura-linea-row--venta-datos {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .factura-linea-row__quitar {
-    grid-column: 1 / -1;
-    justify-self: end;
+    align-self: end;
   }
 }
 
